@@ -1,0 +1,10 @@
+gitignore
+# 個人メモ・セッション設定（git管理外）
+CLAUDE.local.md
+.claude/
+
+# シークレット（値は .env.local のみ。.env.example はコミットする）
+.env*.local
+
+# OS
+.DS_Store

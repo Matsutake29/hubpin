@@ -14,7 +14,7 @@ export default async function UserPage({
 }: {
   params: Promise<{ username: string }>
 }) {
-  const { username } = params
+  const { username } = await params
   return (
     <main className="mx-auto max-w-2xl p-8">
       <h1 className="text-2xl font-bold">@{username}</h1>

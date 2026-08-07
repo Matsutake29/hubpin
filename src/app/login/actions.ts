@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { resetDemoData } from '@/lib/demo-seed';
 import { redirect } from 'next/navigation';
 
 type LoginState = { message: string } | undefined
@@ -11,8 +12,21 @@ export async function login(prevState: LoginState, formData: FormData) {
     email: String(formData.get('email')),
     password: String(formData.get('password')),
   });
-
   if (error) return { message: 'メールアドレスかパスワードが違います' }
+  redirect('/dashboard');
+}
+
+export async function demoLogin(_prevState: LoginState) {
+  const supabase  = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+      email: process.env.DEMO_EMAIL!,
+      password: process.env.DEMO_PASSWORD!,
+  });
+  if (error) {
+    console.error('Demo login failed:', error.message)
+    return { message: 'デモログインに失敗しました' }
+  }
+  await resetDemoData(supabase);
   redirect('/dashboard');
 }
 

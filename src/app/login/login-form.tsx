@@ -1,10 +1,12 @@
 "use client";
-import { login } from "./actions";
+import { login,demoLogin } from "./actions";
 import { useActionState } from "react";
 
 export function LoginForm() {
   const [state, formAction] = useActionState(login, undefined)
+  const [demoState, demoFormAction] = useActionState(demoLogin, undefined)
   return (
+    <>
     <form action={formAction} className="flex flex-col gap-4">
       <div>
         <label htmlFor="email">Email</label>
@@ -17,5 +19,10 @@ export function LoginForm() {
       <button type="submit">ログイン</button>
       {state?.message && <p className="text-red-500">{state.message}</p>}
     </form>
+    <form action={demoFormAction} className="flex flex-col gap-4">
+      <button type="submit">デモログイン</button>
+      {demoState?.message && <p className="text-red-500">{demoState.message}</p>}
+    </form>
+    </>
   );
 }

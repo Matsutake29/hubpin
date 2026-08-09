@@ -10,6 +10,14 @@ type Item = {
   sort_order: number
 }
 
+export async function generateStaticParams() {
+  const supabase = createPublicClient()
+  const { data } = await supabase.from('profiles').select('username')
+  return (data ?? []).map((p) => ({ username: p.username }))
+}
+
+export const revalidate = 3600
+
 export default async function UserPage({
   params,
 }: {

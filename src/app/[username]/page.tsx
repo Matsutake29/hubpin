@@ -1,14 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/utils/supabase/public'
-
-type Item = {
-  type: 'link' | 'note' | 'feed'
-  id: string
-  title: string
-  description: string | null
-  url: string | null
-  sort_order: number
-}
+import { CardGrid } from './card-grid'
 
 export async function generateStaticParams() {
   const supabase = createPublicClient()
@@ -41,15 +33,19 @@ export default async function UserPage({
     .order('sort_order')
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <h1 className="text-2xl font-bold">@{profile.username}</h1>
-      <ul className="mt-6 space-y-3">
-        {(items ?? []).map((item: Item) => (
-          <li key={item.id} className="rounded-lg border p-4">
-            {item.title}
-          </li>
-        ))}
-      </ul>
-    </main>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-16 sm:gap-16 sm:py-20">
+      <header className="flex flex-col gap-2">
+        {/* username は「機械が扱う文字列」なので mono。表示名より先に出さない */}
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          {profile.display_name ?? profile.username}
+        </h1>
+        <p className="font-mono text-sm text-muted">@{profile.username}</p>
+        {profile.title && <p className="leading-7">{profile.title}</p>}
+      </header>
+
+      <main>
+        <CardGrid items={items ?? []} />
+      </main>
+    </div>
   )
 }

@@ -110,4 +110,16 @@ body {
   .pin-head--fill {
     background-color: var(--c-main);
   }
+
+  /* 展開部。カードの border-bottom を区切り線に使うので上辺を持たない */
+  .pin-panel {
+    border-color: var(--c-border);
+    transition: border-color 150ms ease;
+  }
+
+  /* 🚨 ホバーはカードと展開部で必ず揃える。片方だけ色が変わると、
+     地続きにしたはずの1枚が上下に割れて見える */
+  .pin-card:hover + .pin-panel {
+    border-color: var(--c-main);
+  }
 }

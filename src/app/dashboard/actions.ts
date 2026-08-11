@@ -13,7 +13,7 @@ type ItemValues = {
 }
 
 type ItemState = {
-  errors?: Record<string, string>
+  errors?: Record<string, { type: string; message: string }>
   values?: ItemValues
 } | undefined
 
@@ -25,7 +25,7 @@ export async function createItem(
 ): Promise<ItemState> {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) return { errors: { _form: 'ログインが必要です' } }
+  if (!auth) return { errors: { _form: { type: 'server', message: 'ログインが必要です' } } }
   const raw = {
     title: String(formData.get('title') ?? ''),
     type: String(formData.get('type') ?? ''),
@@ -35,9 +35,9 @@ export async function createItem(
   }
   const parsed = itemSchema.safeParse(raw)
   if (!parsed.success) {
-    const errors: Record<string, string> = {}
+    const errors: Record<string, { type: string; message: string }> = {}
     for (const issue of parsed.error.issues) {
-      errors[issue.path.join('.')] = issue.message
+      errors[issue.path.join('.')] = { type: 'server', message: issue.message }
     }
     console.log('検証エラー:', errors)
     // 🚨 parsed.data は失敗時に存在しない。ユーザーが打った raw を返す
@@ -60,6 +60,6 @@ export async function createItem(
 
   if (error) {
     console.error('insert failed:', error.message)
-    return { errors: { _form: '保存に失敗しました' } }
+    return { errors: { _form: { type: 'server', message: '保存に失敗しました' } } }
   }
 }

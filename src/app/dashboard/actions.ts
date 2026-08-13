@@ -19,6 +19,18 @@ export type ItemState = {
   values?: ItemValues
 } | undefined
 
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+
+async function revalidatePublicPage(supabase: SupabaseClient, userId: string) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (profile) revalidatePath(`/${profile.username}`)
+}
+
 export async function createItem(
   prevState: ItemState,
   formData: FormData,
@@ -61,6 +73,8 @@ export async function createItem(
     console.error('insert failed:', error.message)
     return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
   }
+  revalidatePath('/dashboard')
+  await revalidatePublicPage(supabase, auth.claims.sub)
 }
 
 export async function updateItem(
@@ -100,15 +114,17 @@ export async function updateItem(
     .select('id')
     .maybeSingle()
 
-    if (error) {
-      console.error('update failed:', error.message)
-      return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
-    }
+  if (error) {
+    console.error('update failed:', error.message)
+    return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
+  }
 
-    if (!data) {
-      return { errors: { root: { type: 'server', message: 'データが見つかりません' } } }
-    }
-    redirect('/dashboard')
+  if (!data) {
+    return { errors: { root: { type: 'server', message: 'データが見つかりません' } } }
+  }
+  revalidatePath('/dashboard')
+  await revalidatePublicPage(supabase, auth.claims.sub)
+  redirect('/dashboard')
 }
 
 export async function toggleVisible(id: string, visible: boolean) {
@@ -123,15 +139,16 @@ export async function toggleVisible(id: string, visible: boolean) {
     .select('id')
     .maybeSingle()
 
-    if (error) {
-      console.error('toggle failed:', error.message)
-      return
-    }
-    if (!data) {
-      console.error('toggle: no row matched')
-      return
-    }
-    revalidatePath('/dashboard')
+  if (error) {
+    console.error('toggle failed:', error.message)
+    return
+  }
+  if (!data) {
+    console.error('toggle: no row matched')
+    return
+  }
+  revalidatePath('/dashboard')
+  await revalidatePublicPage(supabase, auth.claims.sub)
 }
 
 export async function deleteItem(id: string) {
@@ -155,4 +172,5 @@ export async function deleteItem(id: string) {
     return
   }
   revalidatePath('/dashboard')
+  await revalidatePublicPage(supabase, auth.claims.sub)
 }

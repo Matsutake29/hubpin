@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import type { ItemInput } from '@/lib/schemas/item'
-import { EditItemForm } from './item-form'
+import { ItemForm } from '../item-form'
+import { updateItem } from '../actions'
 
 export default async function EditItemPage({
   params,
@@ -21,16 +22,10 @@ export default async function EditItemPage({
   if (!item) notFound()
 
   return (
-    <EditItemForm
-      id={id}
-      item={{
-        ...item,
-        // 3値の保証は DB の CHECK と Zod にあるが、生成型には出ない。
-        // 書き戻すときは updateItem の itemSchema が検証するので、ここが外れても DB は守られる
-        type: item.type as ItemInput['type'],
-        url: item.url ?? '',
-        description: item.description ?? '',
-      }}
+    <ItemForm
+      action={updateItem.bind(null, id)}
+      defaultItem={{ ...item, type: item.type as ItemInput['type'], url: item.url ?? '',
+      description: item.description ?? '' }}
     />
   )
 }

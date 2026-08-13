@@ -13,20 +13,18 @@ type ItemValues = {
   visible: boolean
 }
 
-type ItemState = {
+export type ItemState = {
   errors?: Record<string, { type: string; message: string }>
   values?: ItemValues
 } | undefined
 
-// 🚨 戻り値にも ItemState を書く。書かないと返り値は各 return から推論され、
-//    { _form: string } と Record<string, string> のユニオンになって errors.title が引けない
 export async function createItem(
   prevState: ItemState,
   formData: FormData,
 ): Promise<ItemState> {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) return { errors: { _form: { type: 'server', message: 'ログインが必要です' } } }
+  if (!auth) return { errors: { root: { type: 'server', message: 'ログインが必要です' } } }
   const raw = {
     title: String(formData.get('title') ?? ''),
     type: String(formData.get('type') ?? ''),
@@ -61,7 +59,7 @@ export async function createItem(
 
   if (error) {
     console.error('insert failed:', error.message)
-    return { errors: { _form: { type: 'server', message: '保存に失敗しました' } } }
+    return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
   }
 }
 
@@ -72,7 +70,7 @@ export async function updateItem(
 ): Promise<ItemState> {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) return { errors: { _form: { type: 'server', message: 'ログインが必要です' } } }
+  if (!auth) return { errors: { root: { type: 'server', message: 'ログインが必要です' } } }
   const raw = {
     title: String(formData.get('title') ?? ''),
     type: String(formData.get('type') ?? ''),
@@ -103,11 +101,11 @@ export async function updateItem(
 
     if (error) {
       console.error('update failed:', error.message)
-      return { errors: { _form: { type: 'server', message: '保存に失敗しました' } } }
+      return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
     }
 
     if (!data) {
-      return { errors: { _form: { type: 'server', message: 'データが見つかりません' } } }
+      return { errors: { root: { type: 'server', message: 'データが見つかりません' } } }
     }
     redirect('/dashboard')
 }

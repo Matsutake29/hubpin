@@ -1,15 +1,21 @@
 'use client'
-import { createItem } from '../actions'
 import { useActionState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { itemSchema, type ItemInput } from '@/lib/schemas/item'
+import type { ItemState } from './actions'
 
-export function ItemForm() {
-  const [state, formAction, isPending] = useActionState(createItem, undefined)
-  const { register, formState } = useForm<ItemInput>({
-    errors: state?.errors,
-    values: state?.values as ItemInput | undefined,
+  export function ItemForm({
+    action,
+    defaultItem,
+  }: {
+    action: (prevState: ItemState, formData: FormData) => Promise<ItemState>
+    defaultItem?: ItemInput
+  }) {
+    const [state, formAction, isPending] = useActionState(action, undefined)
+    const { register, formState } = useForm<ItemInput>({
+      errors: state?.errors,
+      values: (state?.values as ItemInput | undefined) ?? defaultItem,
     mode: 'onBlur',
     resolver: zodResolver(itemSchema),
   })
@@ -18,6 +24,7 @@ export function ItemForm() {
     <form action={formAction} className="flex flex-col gap-4">
       {/* 🚨 React 19 の <form action={...}> は送信が終わるとフォームをリセットする。
       エラーで戻ってきたときも消えるので、Server Action が返した値をuseForm の values オプションで書き戻す */}
+      {formState.errors.root && <p>{formState.errors.root.message}</p>}
       <input {...register('title')} placeholder="タイトル" />
       {formState.errors.title && <p>{formState.errors.title.message}</p>}
 

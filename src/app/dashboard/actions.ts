@@ -38,7 +38,6 @@ export async function createItem(
     for (const issue of parsed.error.issues) {
       errors[issue.path.join('.')] = { type: 'server', message: issue.message }
     }
-    console.log('検証エラー:', errors)
     // 🚨 parsed.data は失敗時に存在しない。ユーザーが打った raw を返す
     return { errors, values: raw }
   }
@@ -64,7 +63,9 @@ export async function createItem(
 }
 
 export async function updateItem(
-  id: string,           // 🚨 第1引数
+  // 🚨 id は第1引数。bind が固定するのは先頭の引数で、
+  //    useActionState が渡す (prevState, formData) がその後ろに来る
+  id: string,
   prevState: ItemState,
   formData: FormData
 ): Promise<ItemState> {
@@ -84,7 +85,6 @@ export async function updateItem(
     for (const issue of parsed.error.issues) {
       errors[issue.path.join('.')] = { type: 'server', message: issue.message }
     }
-    console.log('検証エラー:', errors)
     return { errors, values: raw }
   }
 

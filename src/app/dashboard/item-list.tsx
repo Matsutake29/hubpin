@@ -36,10 +36,12 @@ export function AddItemButton() {
   return (
     <Link
       href="/dashboard/new"
-      /* 🚨 色は text-[var(--c-base)] と書く。text-base は Tailwind の font-size と名前が衝突する。
+      /* 🚨 色は text-(color:--c-base) と書く。text-base は Tailwind の font-size と名前が衝突する。
+         (color:…) は「任意の値だが色として扱う」という v4 の型ヒントで、これが無いと
+         エディタが text-base を提案してくる（提案どおりに直すと文字サイズの指定になる）。
          地の色を文字に使うのは、bg-main がライトで暗くダークで明るい対のトークンだから
          （どちらのモードでも十分なコントラストが出る。accent を使うとライトで足りない） */
-      className="shrink-0 rounded-[var(--radius)] bg-main px-4 py-2 text-sm font-bold text-[var(--c-base)] transition-colors hover:bg-main-dark"
+      className="shrink-0 rounded-(--radius) bg-main px-4 py-2 text-sm font-bold text-(color:--c-base) transition-colors hover:bg-main-dark"
     >
       ＋ カードを追加
     </Link>
@@ -56,11 +58,10 @@ export function ItemList({ items }: { items: Item[] }) {
           key={item.id}
           /* 🚨 非公開を opacity で薄くしない。編集するために読む画面なので、
              文字のコントラストは落とさず「地の色」だけで区別する */
-          className={`flex items-center gap-3 rounded-[var(--radius)] border border-line px-3 py-3 transition-colors hover:border-main sm:gap-4 sm:px-4 ${
+          className={`flex items-center gap-3 rounded-(--radius) border border-line px-3 py-3 transition-colors hover:border-main sm:gap-4 sm:px-4 ${
             item.visible ? 'bg-base' : 'bg-sub'
           }`}
         >
-          {/* 🗂️ 並び替えは工程8。今は置くだけなので disabled にしておく */}
           <div className="flex shrink-0 flex-col gap-1.5 text-muted">
             <button type="button" disabled aria-label="上へ移動" className="px-1 disabled:opacity-40">
               <ArrowIcon direction="up" />
@@ -87,7 +88,6 @@ export function ItemList({ items }: { items: Item[] }) {
             編集
           </Link>
 
-          {/* 🗂️ 手順5で Server Action に繋ぐ */}
           <button
             type="button"
             disabled
@@ -104,7 +104,7 @@ export function ItemList({ items }: { items: Item[] }) {
 // 破線の枠＝まだ何も留まっていないボード。body の格子がそのまま透ける
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-[var(--radius)] border border-dashed border-line px-6 py-16 text-center">
+    <div className="flex flex-col items-center gap-4 rounded-(--radius) border border-dashed border-line px-6 py-16 text-center">
       <p className="font-bold">まだカードがありません</p>
       <p className="max-w-sm text-sm leading-6 text-muted">
         分散している発信を、1枚ずつここに留めていきます。

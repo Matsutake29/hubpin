@@ -23,7 +23,8 @@ import type { ItemState } from './actions'
   return (
     <form action={formAction} className="flex flex-col gap-4">
       {/* 🚨 React 19 の <form action={...}> は送信が終わるとフォームをリセットする。
-      エラーで戻ってきたときも消えるので、Server Action が返した値をuseForm の values オプションで書き戻す */}
+      エラーで戻ってきたときは、Server Action が返した値を useForm の values オプションで書き戻す。
+      🚨 成功時は state が変わらず書き戻しが起きないので、action 側で redirect している */}
       {formState.errors.root && <p>{formState.errors.root.message}</p>}
       <input {...register('title')} placeholder="タイトル" />
       {formState.errors.title && <p>{formState.errors.title.message}</p>}

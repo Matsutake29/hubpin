@@ -1,14 +1,11 @@
 "use client";
 import { useState } from "react";
+import type { Database } from '@/types/database.types'
 
-export type Item = {
-  type: "link" | "note" | "feed";
-  id: string;
-  title: string;
-  description: string | null;
-  url: string | null;
-  sort_order: number;
-};
+export type Item = Pick<
+  Database['public']['Tables']['items']['Row'],
+  'id' | 'type' | 'title' | 'description' | 'url' | 'sort_order'
+>
 
 export function CardGrid({ items }: { items: Item[] }) {
   // ①-1 開いているカードの id を1つだけ持つ。何も開いていない状態を null で表す

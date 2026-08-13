@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { itemSchema } from '@/lib/schemas/item'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 // フォームが送ってきた生の値。検証に失敗したとき画面へ返して入力を保つ
 type ItemValues = {
@@ -108,4 +109,50 @@ export async function updateItem(
       return { errors: { root: { type: 'server', message: 'データが見つかりません' } } }
     }
     redirect('/dashboard')
+}
+
+export async function toggleVisible(id: string, visible: boolean) {
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getClaims()
+  if (!auth) return
+
+  const { data, error } = await supabase
+    .from('items')
+    .update({ visible: !visible })
+    .eq('id', id)
+    .select('id')
+    .maybeSingle()
+
+    if (error) {
+      console.error('toggle failed:', error.message)
+      return
+    }
+    if (!data) {
+      console.error('toggle: no row matched')
+      return
+    }
+    revalidatePath('/dashboard')
+}
+
+export async function deleteItem(id: string) {
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getClaims()
+  if (!auth) return
+
+  const { data, error } = await supabase
+    .from('items')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .maybeSingle()
+
+  if (error) {
+    console.error('delete failed:', error.message)
+    return
+  }
+  if (!data) {
+    console.error('delete: no row matched')
+    return
+  }
+  revalidatePath('/dashboard')
 }

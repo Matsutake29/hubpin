@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import type { Database } from '@/types/database.types'
+import { deleteItem, toggleVisible } from './actions'
+import { DeleteButton } from './delete-button'
 
 // 一覧が使うカラムだけを切り出す。page.tsx の select() を変えたらここが赤くなる
 type Item = Pick<
@@ -77,9 +79,27 @@ export function ItemList({ items }: { items: Item[] }) {
           {/* type は機械が扱う語彙なので mono */}
           <span className="shrink-0 font-mono text-xs text-muted">{item.type}</span>
 
-          <span className="shrink-0 text-xs text-muted">
-            {item.visible ? '公開' : '非公開'}
-          </span>
+          {/* 🚨 見えている語は「今の状態」で、押した先の状態ではない。
+              押すと何になるかは aria-label でだけ言う（読み上げは動作を求めるため）。
+              文字を「非公開にする」にすると、今どちらなのかが読めなくなる */}
+          <form
+            action={toggleVisible.bind(null, item.id, item.visible)}
+            className="shrink-0"
+          >
+            <button
+              type="submit"
+              aria-label={item.visible ? '非公開にする' : '公開する'}
+              className="flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-muted transition-colors hover:border-main hover:text-main"
+            >
+              <span
+                aria-hidden="true"
+                className={`h-1.5 w-1.5 rounded-full ${
+                  item.visible ? 'bg-main' : 'bg-muted'
+                }`}
+              />
+              {item.visible ? '公開' : '非公開'}
+            </button>
+          </form>
 
           <Link
             href={`/dashboard/${item.id}`}
@@ -88,13 +108,7 @@ export function ItemList({ items }: { items: Item[] }) {
             編集
           </Link>
 
-          <button
-            type="button"
-            disabled
-            className="shrink-0 text-sm text-muted disabled:opacity-40"
-          >
-            削除
-          </button>
+          <DeleteButton action={deleteItem.bind(null, item.id)} />
         </li>
       ))}
     </ul>

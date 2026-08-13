@@ -18,7 +18,10 @@
   --font-mono: var(--f-mono), monospace;
   --color-main: var(--c-main);
   --color-main-dark: var(--c-dark);
-  --color-base: var(--c-base);
+  /* 🚨 base という名前は使えない。Tailwind のデフォルトテーマに同名の
+     フォントサイズ変数があり、名前空間が衝突すると色の指定が勝って
+     標準のサイズ指定が黙って色になる（2026-08-13 にビルド出力で確認） */
+  --color-canvas: var(--c-base);
   --color-sub: var(--c-sub-bg);
   --color-fg: var(--c-text);
   --color-muted: var(--c-text-mute);

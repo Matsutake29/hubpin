@@ -35,7 +35,7 @@ export function DeleteButton({ action }: { action: () => Promise<void> }) {
             🚨 赤は使わない。トークンに危険色が無く、v1 は8色で凍結している */}
         <button
           type="submit"
-          className="rounded-(--radius) bg-fg px-2.5 py-1 text-xs font-bold text-(color:--c-base)"
+          className="rounded-(--radius) bg-fg px-2.5 py-1 text-xs font-bold text-canvas"
         >
           削除する
         </button>

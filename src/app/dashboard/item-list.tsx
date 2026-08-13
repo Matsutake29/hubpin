@@ -38,12 +38,9 @@ export function AddItemButton() {
   return (
     <Link
       href="/dashboard/new"
-      /* 🚨 色は text-(color:--c-base) と書く。text-base は Tailwind の font-size と名前が衝突する。
-         (color:…) は「任意の値だが色として扱う」という v4 の型ヒントで、これが無いと
-         エディタが text-base を提案してくる（提案どおりに直すと文字サイズの指定になる）。
-         地の色を文字に使うのは、bg-main がライトで暗くダークで明るい対のトークンだから
-         （どちらのモードでも十分なコントラストが出る。accent を使うとライトで足りない） */
-      className="shrink-0 rounded-(--radius) bg-main px-4 py-2 text-sm font-bold text-(color:--c-base) transition-colors hover:bg-main-dark"
+      /* 地の色を文字に使う。bg-main はライトで暗くダークで明るい対のトークンなので、
+         どちらのモードでも十分なコントラストが出る（accent はライトで足りない） */
+      className="shrink-0 rounded-(--radius) bg-main px-4 py-2 text-sm font-bold text-canvas transition-colors hover:bg-main-dark"
     >
       ＋ カードを追加
     </Link>
@@ -61,7 +58,7 @@ export function ItemList({ items }: { items: Item[] }) {
           /* 🚨 非公開を opacity で薄くしない。編集するために読む画面なので、
              文字のコントラストは落とさず「地の色」だけで区別する */
           className={`flex items-center gap-3 rounded-(--radius) border border-line px-3 py-3 transition-colors hover:border-main sm:gap-4 sm:px-4 ${
-            item.visible ? 'bg-base' : 'bg-sub'
+            item.visible ? 'bg-canvas' : 'bg-sub'
           }`}
         >
           <div className="flex shrink-0 flex-col gap-1.5 text-muted">

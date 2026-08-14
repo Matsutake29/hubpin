@@ -1,4 +1,4 @@
-import { LoginForm } from "./login-form";
+import { LoginForm } from './login-form'
 
 export default async function LoginPage() {
   return (
@@ -6,5 +6,5 @@ export default async function LoginPage() {
       <h1 className="text-2xl font-bold">ログイン</h1>
       <LoginForm />
     </main>
-  );
+  )
 }

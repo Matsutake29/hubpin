@@ -7,5 +7,5 @@ export default async function NewItemPage() {
       <h1 className="text-2xl font-bold">新しいアイテム</h1>
       <ItemForm action={createItem} />
     </main>
-  );
+  )
 }

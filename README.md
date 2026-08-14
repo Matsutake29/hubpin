@@ -18,13 +18,13 @@
 
 ## 技術スタック
 
-| | |
-|---|---|
-| フレームワーク | Next.js 16（App Router）/ React 19 / TypeScript（`strict`） |
-| データベース・認証 | Supabase（PostgreSQL） |
-| スタイル | Tailwind CSS v4 |
-| ホスティング | Vercel |
-| CI | GitHub Actions（`build` を必須チェックに設定） |
+|                    |                                                             |
+| ------------------ | ----------------------------------------------------------- |
+| フレームワーク     | Next.js 16（App Router）/ React 19 / TypeScript（`strict`） |
+| データベース・認証 | Supabase（PostgreSQL）                                      |
+| スタイル           | Tailwind CSS v4                                             |
+| ホスティング       | Vercel                                                      |
+| CI                 | GitHub Actions（`build` を必須チェックに設定）              |
 
 ## データモデル
 
@@ -69,15 +69,15 @@ erDiagram
 
 ### 制約と、その理由
 
-| 対象 | 制約 | なぜ |
-|---|---|---|
-| `profiles.id` | `references auth.users(id) on delete cascade` | Auth のユーザーと1対1。**アカウントを消せばプロフィールも消える** |
-| `profiles.username` | `unique` ＋ `check (username ~ '^[a-z0-9_-]{3,30}$')` | **URL（`/[username]`）そのものになる**ので、使える文字を DB 側で縛る |
-| `profiles.username` | `check (username not in ('about','dashboard','login','api','auth','_next','favicon'))` | アプリのルートと衝突する語を予約。**アプリのバリデーションは書き忘れるが、DB の制約は必ず通る** |
-| `items.user_id` | `references public.profiles(id) on delete cascade` | 持ち主が消えたらカードも消える |
-| `items.type` | `check (type in ('link','note','feed'))` | `enum` を使わなかったのは、**値の追加に `alter type` が要り、同一トランザクション内で追加値を使えない**ため。`text` ＋ `CHECK` なら制約を張り替えるだけで済む |
-| `items (user_id, sort_order)` | インデックス | 公開ページの読み方が**「この人のカードを並び順で全部」しかない**ため |
-| `updated_at` | `before update` トリガーで自動更新 | **アプリ側で入れると必ず書き漏れる**ので DB 側で強制する |
+| 対象                          | 制約                                                                                   | なぜ                                                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profiles.id`                 | `references auth.users(id) on delete cascade`                                          | Auth のユーザーと1対1。**アカウントを消せばプロフィールも消える**                                                                                             |
+| `profiles.username`           | `unique` ＋ `check (username ~ '^[a-z0-9_-]{3,30}$')`                                  | **URL（`/[username]`）そのものになる**ので、使える文字を DB 側で縛る                                                                                          |
+| `profiles.username`           | `check (username not in ('about','dashboard','login','api','auth','_next','favicon'))` | アプリのルートと衝突する語を予約。**アプリのバリデーションは書き忘れるが、DB の制約は必ず通る**                                                               |
+| `items.user_id`               | `references public.profiles(id) on delete cascade`                                     | 持ち主が消えたらカードも消える                                                                                                                                |
+| `items.type`                  | `check (type in ('link','note','feed'))`                                               | `enum` を使わなかったのは、**値の追加に `alter type` が要り、同一トランザクション内で追加値を使えない**ため。`text` ＋ `CHECK` なら制約を張り替えるだけで済む |
+| `items (user_id, sort_order)` | インデックス                                                                           | 公開ページの読み方が**「この人のカードを並び順で全部」しかない**ため                                                                                          |
+| `updated_at`                  | `before update` トリガーで自動更新                                                     | **アプリ側で入れると必ず書き漏れる**ので DB 側で強制する                                                                                                      |
 
 ### RLS と GRANT の二段構え
 
@@ -91,9 +91,9 @@ erDiagram
    └─ RLS   … 触れるとして、どの行か（auth.uid() = user_id）
 ```
 
-| ロール | `profiles` | `items` |
-|---|---|---|
-| `anon`（未認証） | `select` | `select` |
+| ロール                          | `profiles`          | `items`                                   |
+| ------------------------------- | ------------------- | ----------------------------------------- |
+| `anon`（未認証）                | `select`            | `select`                                  |
 | `authenticated`（ログイン済み） | `select` / `update` | `select` / `insert` / `update` / `delete` |
 
 Supabase の標準は「**全部 GRANT して RLS だけで制御する**」だが、それを採らなかった。

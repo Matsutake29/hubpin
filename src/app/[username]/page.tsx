@@ -10,11 +10,7 @@ export async function generateStaticParams() {
 
 export const revalidate = 3600
 
-export default async function UserPage({
-  params,
-}: {
-  params: Promise<{ username: string }>
-}) {
+export default async function UserPage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
   const supabase = createPublicClient()
 

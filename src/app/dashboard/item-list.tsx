@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Database } from '@/types/database.types'
-import { deleteItem, toggleVisible } from './actions'
+import { deleteItem, moveItem, toggleVisible } from './actions'
 import { DeleteButton } from './delete-button'
 
 // 一覧が使うカラムだけを切り出す。page.tsx の select() を変えたらここが赤くなる
@@ -52,7 +52,7 @@ export function ItemList({ items }: { items: Item[] }) {
 
   return (
     <ul className="flex flex-col gap-3">
-      {items.map((item) => (
+      {items.map((item, index) => (
         <li
           key={item.id}
           /* 🚨 非公開を opacity で薄くしない。編集するために読む画面なので、
@@ -62,12 +62,26 @@ export function ItemList({ items }: { items: Item[] }) {
           }`}
         >
           <div className="flex shrink-0 flex-col gap-1.5 text-muted">
-            <button type="button" disabled aria-label="上へ移動" className="px-1 disabled:opacity-40">
-              <ArrowIcon direction="up" />
-            </button>
-            <button type="button" disabled aria-label="下へ移動" className="px-1 disabled:opacity-40">
-              <ArrowIcon direction="down" />
-            </button>
+            <form action={moveItem.bind(null, item.id, 'up')}>
+              <button
+                type="submit"
+                disabled={index === 0}
+                aria-label="上へ移動"
+                className="px-1 disabled:opacity-40"
+              >
+                <ArrowIcon direction="up" />
+              </button>
+            </form>
+            <form action={moveItem.bind(null, item.id, 'down')}>
+              <button
+                type="submit"
+                disabled={index === items.length - 1}
+                aria-label="下へ移動"
+                className="px-1 disabled:opacity-40"
+              >
+                <ArrowIcon direction="down" />
+              </button>
+            </form>
           </div>
 
           {/* min-w-0 が無いと flex アイテムが縮まず truncate が効かない */}
@@ -79,10 +93,7 @@ export function ItemList({ items }: { items: Item[] }) {
           {/* 🚨 見えている語は「今の状態」で、押した先の状態ではない。
               押すと何になるかは aria-label でだけ言う（読み上げは動作を求めるため）。
               文字を「非公開にする」にすると、今どちらなのかが読めなくなる */}
-          <form
-            action={toggleVisible.bind(null, item.id, item.visible)}
-            className="shrink-0"
-          >
+          <form action={toggleVisible.bind(null, item.id, item.visible)} className="shrink-0">
             <button
               type="submit"
               aria-label={item.visible ? '非公開にする' : '公開する'}
@@ -90,9 +101,7 @@ export function ItemList({ items }: { items: Item[] }) {
             >
               <span
                 aria-hidden="true"
-                className={`h-1.5 w-1.5 rounded-full ${
-                  item.visible ? 'bg-main' : 'bg-muted'
-                }`}
+                className={`h-1.5 w-1.5 rounded-full ${item.visible ? 'bg-main' : 'bg-muted'}`}
               />
               {item.visible ? '公開' : '非公開'}
             </button>

@@ -1,0 +1,11 @@
+.next/
+out/
+package-lock.json
+
+# 🚨 Prettier は .gitignore を読まない。git 管理外のものは自分で書く
+supabase/.temp/
+CLAUDE.local.md
+.claude/
+
+# supabase gen types の生成物。整形すると再生成のたびに差分が出る
+src/types/database.types.ts

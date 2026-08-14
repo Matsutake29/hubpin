@@ -1,5 +1,5 @@
-"use client";
-import { useState } from "react";
+'use client'
+import { useState } from 'react'
 import type { Database } from '@/types/database.types'
 
 export type Item = Pick<
@@ -9,18 +9,18 @@ export type Item = Pick<
 
 export function CardGrid({ items }: { items: Item[] }) {
   // ①-1 開いているカードの id を1つだけ持つ。何も開いていない状態を null で表す
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null)
 
   return (
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => {
-        const isOpen = openId === item.id;
+        const isOpen = openId === item.id
         // 開いたカードだけ全幅にする。col-span-3 ではない（列数が 3/2/1 と変わっても効くように）。
         // li を縦の flex にしてカードは grow で余りを埋める。h-full だと「行の高さ」が
         // 親に解決されてしまい、展開部のぶんだけ次の行へはみ出す
         return (
-          <li key={item.id} className={`flex flex-col ${isOpen ? "col-span-full" : ""}`}>
-            {item.type === "link" && item.url ? (
+          <li key={item.id} className={`flex flex-col ${isOpen ? 'col-span-full' : ''}`}>
+            {item.type === 'link' && item.url ? (
               <a
                 className="pin-card grow"
                 href={item.url}
@@ -35,8 +35,13 @@ export function CardGrid({ items }: { items: Item[] }) {
                     ↗
                   </span>
                 </span>
+                {/* 🚨 ここだけ2行で打ち切る。link のカードは一覧の1枚で、
+                    高さが揃わないとグリッドが崩れる。note / feed の展開部（下）は
+                    開いて全文を読む場所なので切らない */}
                 {item.description && (
-                  <span className="text-sm leading-6 text-muted">{item.description}</span>
+                  <span className="line-clamp-2 text-sm leading-6 text-muted">
+                    {item.description}
+                  </span>
                 )}
               </a>
             ) : (
@@ -44,7 +49,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                 <button
                   type="button"
                   // 開いている間はカードと展開部を1枚の紙として見せる（下の角丸を落として地続きにする）
-                  className={`pin-card grow text-left ${isOpen ? "rounded-b-none" : ""}`}
+                  className={`pin-card grow text-left ${isOpen ? 'rounded-b-none' : ''}`}
                   aria-expanded={isOpen}
                   aria-controls={`panel-${item.id}`}
                   onClick={() => setOpenId(isOpen ? null : item.id)}
@@ -63,8 +68,8 @@ export function CardGrid({ items }: { items: Item[] }) {
               </>
             )}
           </li>
-        );
+        )
       })}
     </ul>
-  );
+  )
 }

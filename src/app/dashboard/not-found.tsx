@@ -18,10 +18,7 @@ export default function DashboardNotFound() {
 
       {/* 一覧の「編集」と同じリンクの見た目にする。404 は行き止まりを知らせる画面で、
           ここで何かを始めてほしいわけではないので、追加ボタンと同じ強さにはしない */}
-      <Link
-        href="/dashboard"
-        className="mt-2 text-sm text-main underline underline-offset-4"
-      >
+      <Link href="/dashboard" className="mt-2 text-sm text-main underline underline-offset-4">
         カード一覧に戻る
       </Link>
     </div>

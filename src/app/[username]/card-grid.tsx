@@ -35,8 +35,13 @@ export function CardGrid({ items }: { items: Item[] }) {
                     ↗
                   </span>
                 </span>
+                {/* 🚨 ここだけ2行で打ち切る。link のカードは一覧の1枚で、
+                    高さが揃わないとグリッドが崩れる。note / feed の展開部（下）は
+                    開いて全文を読む場所なので切らない */}
                 {item.description && (
-                  <span className="text-sm leading-6 text-muted">{item.description}</span>
+                  <span className="line-clamp-2 text-sm leading-6 text-muted">
+                    {item.description}
+                  </span>
                 )}
               </a>
             ) : (

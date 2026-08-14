@@ -150,6 +150,63 @@ export async function toggleVisible(id: string, visible: boolean) {
   await revalidatePublicPage(supabase, auth.claims.sub)
 }
 
+export async function moveItem(id: string, direction: 'up' | 'down') {
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getClaims()
+  if (!auth) return
+
+  const { data: items, error } = await supabase
+    .from('items')
+    .select('sort_order, id')
+    .order('sort_order')
+
+  if (error) {
+    console.error('move: failed to load items:', error.message)
+    return
+  }
+  if (!items || items.length === 0) {
+    console.error('move: no items to reorder')
+    return
+  }
+
+  // 🚨 ボタンを disabled にしても Server Action は直接叩けるので、範囲はここでも守る。
+  //    index が -1 になるのは「存在しない id」と「他人のカード」の両方
+  //    （他人の行は RLS で items に入ってこない）
+  const index = items.findIndex((item) => item.id === id)
+  if (index === -1) return
+  if (direction === 'up' && index === 0) return
+  if (direction === 'down' && index === items.length - 1) return
+
+  // 🚨 update は1回に1条件しか持てないので2回に分かれる。1回目だけ成功すると
+  //    2行が同じ sort_order を持つが、この列に UNIQUE が無いので DB は何も言わない
+  const targetIndex = direction === 'up' ? index - 1 : index + 1
+  const currentItem = items[index]
+  const targetItem = items[targetIndex]
+  const { error: error1 } = await supabase
+    .from('items')
+    .update({ sort_order: targetItem.sort_order })
+    .eq('id', currentItem.id)
+  if (error1) {
+    console.error('move: first update failed, nothing changed:', error1.message)
+    return
+  }
+  const { error: error2 } = await supabase
+    .from('items')
+    .update({ sort_order: currentItem.sort_order })
+    .eq('id', targetItem.id)
+  if (error2) {
+    console.error(
+      'move: second update failed, sort_order may be duplicated:',
+      currentItem.id,
+      targetItem.id,
+      error2.message,
+    )
+  }
+
+  revalidatePath('/dashboard')
+  await revalidatePublicPage(supabase, auth.claims.sub)
+}
+
 export async function deleteItem(id: string) {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()

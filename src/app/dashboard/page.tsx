@@ -5,7 +5,6 @@ import { ItemList, AddItemButton } from './item-list'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
-
   const client = await createClient()
   // proxy.ts で保護しているが、型は「未ログインの可能性」を消してくれない。
   // ここで確認すると sub が string に確定する

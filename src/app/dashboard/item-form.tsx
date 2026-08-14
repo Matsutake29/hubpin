@@ -5,17 +5,17 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { itemSchema, type ItemInput } from '@/lib/schemas/item'
 import type { ItemState } from './actions'
 
-  export function ItemForm({
-    action,
-    defaultItem,
-  }: {
-    action: (prevState: ItemState, formData: FormData) => Promise<ItemState>
-    defaultItem?: ItemInput
-  }) {
-    const [state, formAction, isPending] = useActionState(action, undefined)
-    const { register, formState } = useForm<ItemInput>({
-      errors: state?.errors,
-      values: (state?.values as ItemInput | undefined) ?? defaultItem,
+export function ItemForm({
+  action,
+  defaultItem,
+}: {
+  action: (prevState: ItemState, formData: FormData) => Promise<ItemState>
+  defaultItem?: ItemInput
+}) {
+  const [state, formAction, isPending] = useActionState(action, undefined)
+  const { register, formState } = useForm<ItemInput>({
+    errors: state?.errors,
+    values: (state?.values as ItemInput | undefined) ?? defaultItem,
     mode: 'onBlur',
     resolver: zodResolver(itemSchema),
   })
@@ -46,7 +46,9 @@ import type { ItemState } from './actions'
         公開する
       </label>
 
-      <button type="submit" disabled={isPending}>保存</button>
+      <button type="submit" disabled={isPending}>
+        保存
+      </button>
     </form>
   )
 }

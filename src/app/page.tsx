@@ -1,32 +1,32 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 const links = [
   {
-    href: "/matsutake",
-    title: "実物を見る",
-    description: "作者のハブページ。実際に使われている状態",
+    href: '/matsutake',
+    title: '実物を見る',
+    description: '作者のハブページ。実際に使われている状態',
     external: false,
   },
   {
-    href: "/guest",
-    title: "デモを見る",
-    description: "デモ用アカウント。中身は自由に編集できる",
+    href: '/guest',
+    title: 'デモを見る',
+    description: 'デモ用アカウント。中身は自由に編集できる',
     external: false,
   },
   {
-    href: "https://github.com/Matsutake29/hubpin",
-    title: "ソースコード",
-    description: "実装と、設計の判断を残したコミット履歴",
+    href: 'https://github.com/Matsutake29/hubpin',
+    title: 'ソースコード',
+    description: '実装と、設計の判断を残したコミット履歴',
     external: true,
   },
-];
+]
 
 const stack = [
-  { name: "Next.js 16", detail: "App Router / ISR による静的配信" },
-  { name: "TypeScript 5", detail: "React 19" },
-  { name: "Tailwind CSS v4", detail: "CSS変数によるトークン設計" },
-  { name: "Supabase", detail: "PostgreSQL / Auth / 行レベルセキュリティ" },
-];
+  { name: 'Next.js 16', detail: 'App Router / ISR による静的配信' },
+  { name: 'TypeScript 5', detail: 'React 19' },
+  { name: 'Tailwind CSS v4', detail: 'CSS変数によるトークン設計' },
+  { name: 'Supabase', detail: 'PostgreSQL / Auth / 行レベルセキュリティ' },
+]
 
 export default function Home() {
   return (
@@ -45,8 +45,8 @@ export default function Home() {
           </h1>
           {/* auto-phrase = 日本語を文節で改行する。未対応ブラウザは通常の折り返しに落ちる */}
           <p className="max-w-2xl leading-8 [word-break:auto-phrase]">
-            ブログ、X、GitHub。発信の場所が増えるほど、見る人は全部を追いかけられなくなる。
-            Hubpin はそれらを1枚にまとめて公開する。更新はコードを触らずにでき、ページは静的なまま速い。
+            ブログ、X、GitHub。発信の場所が増えるほど、見る人は全部を追いかけられなくなる。 Hubpin
+            はそれらを1枚にまとめて公開する。更新はコードを触らずにでき、ページは静的なまま速い。
           </p>
         </section>
 
@@ -96,9 +96,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-line pt-6 text-sm text-muted">
-        作 — まつたけ
-      </footer>
+      <footer className="border-t border-line pt-6 text-sm text-muted">作 — まつたけ</footer>
     </div>
-  );
+  )
 }

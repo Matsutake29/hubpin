@@ -22,14 +22,14 @@ export async function updateSession(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           )
           Object.entries(headers).forEach(([key, value]) =>
-            supabaseResponse.headers.set(key, value)
+            supabaseResponse.headers.set(key, value),
           )
         },
       },
-    }
+    },
   )
 
   // Do not run code between createServerClient and

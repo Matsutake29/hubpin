@@ -62,10 +62,20 @@ export function ItemList({ items }: { items: Item[] }) {
           }`}
         >
           <div className="flex shrink-0 flex-col gap-1.5 text-muted">
-            <button type="button" disabled aria-label="上へ移動" className="px-1 disabled:opacity-40">
+            <button
+              type="button"
+              disabled
+              aria-label="上へ移動"
+              className="px-1 disabled:opacity-40"
+            >
               <ArrowIcon direction="up" />
             </button>
-            <button type="button" disabled aria-label="下へ移動" className="px-1 disabled:opacity-40">
+            <button
+              type="button"
+              disabled
+              aria-label="下へ移動"
+              className="px-1 disabled:opacity-40"
+            >
               <ArrowIcon direction="down" />
             </button>
           </div>
@@ -79,10 +89,7 @@ export function ItemList({ items }: { items: Item[] }) {
           {/* 🚨 見えている語は「今の状態」で、押した先の状態ではない。
               押すと何になるかは aria-label でだけ言う（読み上げは動作を求めるため）。
               文字を「非公開にする」にすると、今どちらなのかが読めなくなる */}
-          <form
-            action={toggleVisible.bind(null, item.id, item.visible)}
-            className="shrink-0"
-          >
+          <form action={toggleVisible.bind(null, item.id, item.visible)} className="shrink-0">
             <button
               type="submit"
               aria-label={item.visible ? '非公開にする' : '公開する'}
@@ -90,9 +97,7 @@ export function ItemList({ items }: { items: Item[] }) {
             >
               <span
                 aria-hidden="true"
-                className={`h-1.5 w-1.5 rounded-full ${
-                  item.visible ? 'bg-main' : 'bg-muted'
-                }`}
+                className={`h-1.5 w-1.5 rounded-full ${item.visible ? 'bg-main' : 'bg-muted'}`}
               />
               {item.visible ? '公開' : '非公開'}
             </button>

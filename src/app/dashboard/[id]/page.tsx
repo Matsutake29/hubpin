@@ -4,11 +4,7 @@ import type { ItemInput } from '@/lib/schemas/item'
 import { ItemForm } from '../item-form'
 import { updateItem } from '../actions'
 
-export default async function EditItemPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function EditItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
@@ -24,8 +20,12 @@ export default async function EditItemPage({
   return (
     <ItemForm
       action={updateItem.bind(null, id)}
-      defaultItem={{ ...item, type: item.type as ItemInput['type'], url: item.url ?? '',
-      description: item.description ?? '' }}
+      defaultItem={{
+        ...item,
+        type: item.type as ItemInput['type'],
+        url: item.url ?? '',
+        description: item.description ?? '',
+      }}
     />
   )
 }

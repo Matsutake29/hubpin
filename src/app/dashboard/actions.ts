@@ -14,10 +14,12 @@ type ItemValues = {
   visible: boolean
 }
 
-export type ItemState = {
-  errors?: Record<string, { type: string; message: string }>
-  values?: ItemValues
-} | undefined
+export type ItemState =
+  | {
+      errors?: Record<string, { type: string; message: string }>
+      values?: ItemValues
+    }
+  | undefined
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>
 
@@ -31,10 +33,7 @@ async function revalidatePublicPage(supabase: SupabaseClient, userId: string) {
   if (profile) revalidatePath(`/${profile.username}`)
 }
 
-export async function createItem(
-  prevState: ItemState,
-  formData: FormData,
-): Promise<ItemState> {
+export async function createItem(prevState: ItemState, formData: FormData): Promise<ItemState> {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()
   if (!auth) return { errors: { root: { type: 'server', message: 'ログインが必要です' } } }
@@ -82,7 +81,7 @@ export async function updateItem(
   //    useActionState が渡す (prevState, formData) がその後ろに来る
   id: string,
   prevState: ItemState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ItemState> {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()

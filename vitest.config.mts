@@ -9,5 +9,6 @@ export default defineConfig({
   test: {
     // DOM をテストするので node ではなく jsdom
     environment: 'jsdom',
+    setupFiles: ['./vitest-setup.ts'],
   },
 })

@@ -65,7 +65,7 @@ export function ItemList({ items }: { items: Item[] }) {
             <form action={moveItem.bind(null, item.id, 'up')}>
               <button
                 type="submit"
-                disabled={index === 0}
+                disabled={false}
                 aria-label="上へ移動"
                 className="px-1 disabled:opacity-40"
               >

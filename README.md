@@ -2,6 +2,9 @@
 
 分散した発信（ブログ・Zenn・X・GitHub・自作アプリ）を1枚のページに集約するハブサイト。
 
+> 🚧 **公開準備中。** 下記 URL はデプロイ後に有効になります。
+> それまではローカル（[セットアップ](#セットアップ)参照）で動かせます。
+
 🌐 https://hub.mt-tk.com
 
 - **公開ページは ISR で静的配信**、**編集画面は認証 + RLS** で保護する
@@ -9,7 +12,7 @@
 
 ## デモ
 
-**アカウント登録なしで編集画面を触れます。**
+**公開後、アカウント登録なしで編集画面を触れます。**
 
 → **https://hub.mt-tk.com/login** の「**デモとしてログイン**」
 
@@ -23,6 +26,7 @@
 | フレームワーク     | Next.js 16（App Router）/ React 19 / TypeScript（`strict`） |
 | データベース・認証 | Supabase（PostgreSQL）                                      |
 | スタイル           | Tailwind CSS v4                                             |
+| テスト             | Vitest / React Testing Library（18本）                      |
 | ホスティング       | Vercel                                                      |
 | CI                 | GitHub Actions（`build` を必須チェックに設定）              |
 
@@ -101,13 +105,35 @@ Supabase の標準は「**全部 GRANT して RLS だけで制御する**」だ�
 防御が1枚ではなく2枚になる。
 
 公開ページが未認証でも読めるのは `using (true)`（`profiles`）と
-`using (visible = true)`（`items`）の2本。書き込み系はすべて `auth.uid() = user_id` で本人に閉じる。
+`to anon using (visible = true)`（`items`）の2本。書き込み系はすべて `auth.uid() = user_id` で本人に閉じる。
+
+#### ロールを指定しないと、ポリシーは足し算される
+
+`items` の SELECT は、当初こう書いていた。
+
+```sql
+-- 公開ページ用
+create policy "..." on public.items for select using (visible = true);
+-- 本人用
+create policy "..." on public.items for select using (auth.uid() = user_id);
+```
+
+PostgreSQL の PERMISSIVE ポリシーは **OR で結合される**。そのためログイン中は
+`(visible = true) OR (auth.uid() = user_id)` になり、**他人の公開カードまで見えていた**。
+
+**用途で2本に分けたつもりが、適用先のロールで分けていなかった**のが原因。
+公開ページは cookie を持たない専用クライアント（＝`anon`）で読むので、
+`to anon` を付けて役割を固定した。
 
 - ポリシーの実物 → [`supabase/migrations/`](./supabase/migrations/)
+- 上記の修正 → [`20260810070940_fix_items_select_policy.sql`](./supabase/migrations/20260810070940_fix_items_select_policy.sql)
 - 検証用SQL（期待値コメント付き） → [`supabase/rls_checks.sql`](./supabase/rls_checks.sql)
 
 > **v1.1 で `pages` テーブル（作品の下層ページ）を追加する予定**。
 > 設計はしたが v0.5 では実装していない。
+
+> **`items.type` の `feed`（RSS / API の取り込み）も、v0.5 では器だけ**。
+> 値としては受け付けるが、取得処理は実装していない。
 
 ## セットアップ
 
@@ -118,3 +144,18 @@ npm run dev
 ```
 
 http://localhost:3000 で起動する。環境変数は `.env.example` を参照。
+
+### コマンド
+
+| コマンド               | 内容                                         |
+| ---------------------- | -------------------------------------------- |
+| `npm run dev`          | 開発サーバー                                 |
+| `npm run test`         | テスト（watch）                              |
+| `npm run test:run`     | テストを1回だけ実行して終了する（CI と同じ） |
+| `npm run lint`         | ESLint                                       |
+| `npm run format`       | Prettier で整形する                          |
+| `npm run format:check` | 整形されているかを確認する（CI と同じ）      |
+| `npm run build`        | 本番ビルド                                   |
+
+CI は `lint` → `format:check` → `test:run` → `build` の順で走る。
+**`build` が最も重いので、整形や挙動で落ちるならその前に分かったほうがいい**という並びにしてある。

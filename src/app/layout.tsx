@@ -19,6 +19,7 @@ const jetBrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://hub.mt-tk.com'),
   title: {
     default: 'Hubpin',
     template: '%s | Hubpin',

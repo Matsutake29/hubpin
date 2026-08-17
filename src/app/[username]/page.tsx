@@ -71,6 +71,10 @@ export default async function UserPage({ params }: { params: Promise<{ username:
     .from('items')
     .select('id, type, title, description, url, sort_order')
     .eq('user_id', profile.id)
+    // RLS（to anon using (visible = true)）でも絞られるが、ここでも絞る。
+    // 2026-08-10 に PERMISSIVE の OR 結合で非公開カードが漏れた場所で、
+    // ポリシーを1本触るだけで再発する。dashboard 側は本人しか見ないので RLS に任せる。
+    .eq('visible', true)
     .order('sort_order')
 
   return (

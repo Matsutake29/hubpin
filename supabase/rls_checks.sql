@@ -43,19 +43,32 @@ begin;
     returning id, title;   -- 期待: 7行
 rollback;
 
--- ⑤ visible = false は未認証から見えないが、本人には見える
---    🚨 期待値は 2026-08-06 時点（items 8行・すべて matsutake）。
---       08-10 に guest の4行が増え、さらに select ポリシーを anon 限定に直したので、
---       いま実行すると anon 10 / 本人 7 になる
+-- ⑤-a 未認証からは visible = false が見えない
+--    🚨 ⑤ を1本にまとめないこと。SQL Editor は最後の SELECT の結果しか表示しないので、
+--       anon 側の結果が画面に出ず、本人側の値だけを見て通ったことになる。
+--       2026-08-17 に実際そうなっていた（⑤ の主目的が一度も画面に出ないまま通っていた）。
+--    📌 当初の期待値は「anon 7 / 本人 8」（2026-08-06 時点・items 8行）。
+--       08-10 に guest の4行が増えて陳腐化したので、件数を直書きしない形に変えた。
 begin;
   update public.items set visible = false where title = 'Zenn';
 
   set local role anon;
-  select count(*) from public.items;   -- 期待: 7
+  select
+    count(*)                               as 見える総数,    -- 🚨 壊れたら: 0（そもそも読めない）
+    count(*) filter (where title = 'Zenn') as Zennが見える数 -- 期待: 0 ／ 🚨 壊れたら: 1
+  from public.items;
+rollback;
+
+-- ⑤-b 本人には visible = false でも見える（⑤-a の対照実験）
+begin;
+  update public.items set visible = false where title = 'Zenn';
 
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"a12690b6-fc45-4514-978b-8b06315a6604"}';
-  select count(*) from public.items;   -- 期待: 8
+  select
+    count(*)                               as 見える総数,
+    count(*) filter (where title = 'Zenn') as Zennが見える数 -- 期待: 1 ／ 🚨 壊れたら: 0
+  from public.items;
 rollback;
 
 -- ⑥ 🚨 ログイン中に他人のカードが見えない
@@ -70,4 +83,28 @@ begin;
   select count(*) filter (where user_id <> 'a12690b6-fc45-4514-978b-8b06315a6604')
     as 他人の行数
   from public.items;   -- 期待: 0
+rollback;
+
+-- ⑦ 🚨 guest 本人でも username は変更できない（Issue #24 の本体）
+--    2026-08-17 まで、ここが通ってしまっていた。
+--    RLS（auth.uid() = id）は「本人の行だから」成立する。GRANT 側で閉じている。
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  update public.profiles set username = 'hacked'
+    where id = 'b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b';
+  -- 期待: ERROR 42501 permission denied for table profiles
+  -- 🚨 壊れたら: UPDATE 1（権限が開いている＝直っていない）
+rollback;
+
+-- ⑧ 読むほうは今までどおりできる（⑦の対照実験）
+--    revoke したのは update だけで、select を巻き込んでいないことの確認
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  select id, username from public.profiles
+    where id = 'b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b';
+  -- 期待: 1行・username = 'guest'
+  -- 🚨 壊れたら: 0行（revoke が select まで巻き込んだ）
+  --            / 'hacked'（⑦ が rollback されず値が残った）
 rollback;

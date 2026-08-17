@@ -9,3 +9,6 @@ CLAUDE.local.md
 
 # supabase gen types の生成物。整形すると再生成のたびに差分が出る
 src/types/database.types.ts
+
+# Search Console の所有権確認ファイル。Google が生成した内容をこちらで整形しない
+public/google*.html

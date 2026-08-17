@@ -8,6 +8,7 @@ const zenKakuGothicNew = Zen_Kaku_Gothic_New({
   subsets: ['latin'],
   weight: ['400', '700'],
   display: 'swap',
+  preload: false,
 })
 
 // ラベル・データなど「機械が扱う文字列」だけに使う
@@ -18,6 +19,7 @@ const jetBrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://hub.mt-tk.com'),
   title: {
     default: 'Hubpin',
     template: '%s | Hubpin',

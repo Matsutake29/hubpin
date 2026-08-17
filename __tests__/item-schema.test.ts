@@ -108,4 +108,34 @@ describe('itemSchema', () => {
       expect(result.error.issues[0].path).toEqual(['description'])
     }
   })
+  // 🚨 actions.ts:43,92 が String(formData.get('url') ?? '') を渡すので、
+  //    note / feed には '' が来る。url を省略したテストではこの経路を通らないため、
+  //    z.url() を単体で当てると本番だけ壊れる（テストは11本すべて通ってしまう）。
+  test('note は url が空文字でも通る', () => {
+    const result = itemSchema.safeParse({
+      title: 'A',
+      type: 'note',
+      description: 'メモ',
+      url: '',
+      visible: true,
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  // z.url() が実際に効いていることの確認。
+  // これが無いと url: z.string() に戻しても気づけない
+  test('link は url が URL 形式でないと通らない', () => {
+    const result = itemSchema.safeParse({
+      title: 'A',
+      type: 'link',
+      url: 'ホームページ',
+      visible: true,
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].path).toEqual(['url'])
+    }
+  })
 })

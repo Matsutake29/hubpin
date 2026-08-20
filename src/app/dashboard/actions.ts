@@ -100,6 +100,11 @@ export async function createItem(prevState: ItemState, formData: FormData): Prom
   }
   revalidatePath('/dashboard')
   await revalidatePublicPage(supabase, userId)
+  // 🚨 ここを書き忘れていた（Issue #27）。updateItem は redirect しているのに
+  //    createItem だけしておらず、保存に成功しても追加画面に留まっていた。
+  //    React 19 が送信後にフォームをリセットするので、画面は「入力が消えただけ」に見え、
+  //    成功したのか失敗したのかが利用者から区別できなかった（実際は保存できている）。
+  redirect('/dashboard')
 }
 
 export async function updateItem(

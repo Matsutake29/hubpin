@@ -18,14 +18,17 @@ export default async function EditItemPage({ params }: { params: Promise<{ id: s
   if (!item) notFound()
 
   return (
-    <ItemForm
-      action={updateItem.bind(null, id)}
-      defaultItem={{
-        ...item,
-        type: item.type as ItemInput['type'],
-        url: item.url ?? '',
-        description: item.description ?? '',
-      }}
-    />
+    <main className="mx-auto max-w-2xl p-8">
+      <h1 className="text-2xl font-bold">カードを編集</h1>
+      <ItemForm
+        action={updateItem.bind(null, id)}
+        defaultItem={{
+          ...item,
+          type: item.type as ItemInput['type'],
+          url: item.url ?? '',
+          description: item.description ?? '',
+        }}
+      />
+    </main>
   )
 }

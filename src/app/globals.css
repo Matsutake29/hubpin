@@ -9,6 +9,12 @@
   --c-text-mute: #888888;
   --c-accent: #4a90d9;
   --c-border: #e5e5e5;
+  /* ⭐ 9色目。v1 は8色で凍結していたが、2026-08-20 に実測して外した。
+     Tailwind の text-red-500（#fb2c36）は ダーク地で 4.97:1 と足りているのに
+     ライト地（#ffffff）では 3.81:1 で AA 本文基準（4.5:1）を下回る。
+     つまり「赤が使えない」のではなく「ライトの赤だけが足りない」。
+     既存8色と同じ「ライト/ダークの対」で持たせて、両モードとも基準を満たす */
+  --c-danger: #c1121f; /* ライト地（#ffffff）に対して 6.22:1 */
   --gap: 16px;
   --radius: 8px;
 }
@@ -27,6 +33,7 @@
   --color-muted: var(--c-text-mute);
   --color-accent: var(--c-accent);
   --color-line: var(--c-border);
+  --color-danger: var(--c-danger);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +46,8 @@
     --c-text-mute: #8b949e;
     --c-accent: #6bb4f0;
     --c-border: #30363d;
+    /* ダーク地（#0d1117）に対して 4.97:1。ライト用の #c1121f をここで使うと 3.04:1 まで落ちる */
+    --c-danger: #fb2c36;
   }
 }
 
@@ -124,5 +133,93 @@ body {
      地続きにしたはずの1枚が上下に割れて見える */
   .pin-card:hover + .pin-panel {
     border-color: var(--c-main);
+  }
+
+  /* ===== フォーム =====
+     🚨 Tailwind の Preflight が input / select / textarea / button の
+     枠・地・余白をすべて 0 にする。当てなければ「枠が薄い」ではなく
+     「要素がそこにあることが見えない」状態になる。
+     ⚠️ ライトとダークの差ではない。リセットは @media の外なので両方で同じ
+     （2026-08-20 に getComputedStyle で実測。border-width が全要素 0px だった）。
+     ⭐ <select> だけ見えていたのは、ブラウザ既定の appearance（矢印付きの箱）が
+     残るため。枠は同じく 0 で、辻褄が合っていただけ */
+  /* 🚨 枠に --c-border を使わない。カードの区切りには十分でも、入力欄には足りない。
+     WCAG 1.4.11（非テキストコントラスト）は「操作できる部品の境界」に 3:1 を求めるが、
+     --c-border は ライト 1.26:1 / ダーク 1.55:1 しかない（2026-08-20 実測）。
+     ⭐ --c-text-mute なら ライト 3.54:1 / ダーク 6.15:1 で両モードとも満たす。
+     ⚠️ 同じ色でも用途で基準が違う。muted は「本文」には 4.5:1 に届かないが、
+     「枠」は非テキストなので 3:1 でよい。テキストにこの色を使うときは別の判断が要る */
+  .field {
+    width: 100%;
+    border: 1px solid var(--c-text-mute);
+    border-radius: var(--radius);
+    background-color: var(--c-base);
+    padding: 0.5rem 0.75rem;
+    transition: border-color 150ms ease;
+  }
+
+  .field:hover {
+    border-color: var(--c-main);
+  }
+
+  /* 🚨 :focus-visible はグローバルで定義済み。ここで重ねない
+     （outline を二重に持つと offset がずれて枠が二本に見える） */
+
+  .field::placeholder {
+    color: var(--c-text-mute);
+  }
+
+  /* 🚨 block にする。inline のままだと入力欄と横に並ぶ
+     （2026-08-20 まで login-form.tsx が実際にそうなっていた） */
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+
+  /* ⭐ 色と「左の罫」の二重で示す。WCAG 1.4.1（色だけに依存しない）。
+     🚨 記号（⚠ など）を ::before で足さない。スクリーンリーダーが
+     content を読み上げる実装があり、本文の前に無意味な語が挟まる */
+  .form-error {
+    border-left: 2px solid var(--c-danger);
+    padding-left: 0.625rem;
+    font-size: 0.875rem;
+    color: var(--c-danger);
+  }
+
+  /* ===== ボタン =====
+     ⭐ 地の色を文字に使う。--c-main はライトで暗くダークで明るい対のトークンなので、
+     どちらのモードでも十分なコントラストが出る。
+     🚨 accent は使えない。ライト（#4a90d9 対 #ffffff）で 3.34:1 しかない（実測） */
+  .btn-primary {
+    flex-shrink: 0;
+    border-radius: var(--radius);
+    background-color: var(--c-main);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--c-base);
+    transition: background-color 150ms ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--c-dark);
+  }
+
+  /* 送信中。disabled:opacity だけだと押せないことしか伝わらないので、
+     カーソルでも示す */
+  .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* 主導線ではないボタン・リンク（ログアウト、削除、デモログインなど） */
+  .btn-quiet {
+    color: var(--c-text-mute);
+    transition: color 150ms ease;
+  }
+
+  .btn-quiet:hover {
+    color: var(--c-text);
   }
 }

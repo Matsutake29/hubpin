@@ -36,12 +36,9 @@ function ArrowIcon({ direction }: { direction: 'up' | 'down' }) {
 // 見出しの横と空状態の2箇所に出るので分けておく
 export function AddItemButton() {
   return (
-    <Link
-      href="/dashboard/new"
-      /* 地の色を文字に使う。bg-main はライトで暗くダークで明るい対のトークンなので、
-         どちらのモードでも十分なコントラストが出る（accent はライトで足りない） */
-      className="shrink-0 rounded-(--radius) bg-main px-4 py-2 text-sm font-bold text-canvas transition-colors hover:bg-main-dark"
-    >
+    /* なぜ bg-main なのか（accent はライトで足りない）は globals.css の .btn-primary 側に書いた。
+       同じ指定が2箇所にあると、次に直すとき片方だけ直る */
+    <Link href="/dashboard/new" className="btn-primary">
       ＋ カードを追加
     </Link>
   )

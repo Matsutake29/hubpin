@@ -108,3 +108,60 @@ begin;
   -- 🚨 壊れたら: 0行（revoke が select まで巻き込んだ）
   --            / 'hacked'（⑦ が rollback されず値が残った）
 rollback;
+-- ============================================================
+-- 工程11.2（2026-08-20）で追加。⑨⑩ = profiles のロール指定 ／ ⑪⑫ = 並び替えの RPC
+-- ⭐ 期待値は「件数」で書かない（このファイルの冒頭の教訓）。すべて不変量で書く。
+-- ============================================================
+
+-- ⑨ profiles は anon から読める
+--    🚨 ここが壊れると公開ページが落ちる（死守ライン1）。/[username] は
+--       generateStaticParams と本体の2箇所で、cookie 無し＝anon で profiles を引く
+begin;
+  set local role anon;
+  select count(*) > 0 as "profilesが読める" from public.profiles;
+  -- 期待: t
+  -- 🚨 壊れたら: f（to anon が抜けている）
+rollback;
+
+-- ⑩ ログイン中も読める（⑨の対照実験）
+--    to anon だけにしていないことの確認。ここが f になると dashboard/layout.tsx の
+--    ヘッダー（@username）が消える
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  select count(*) > 0 as "profilesが読める" from public.profiles;
+  -- 期待: t
+  -- 🚨 壊れたら: f（authenticated が抜けている）
+rollback;
+
+-- ⑪ 🚨 見えない／存在しない id を渡すと止まる（「わざと壊す」の3回目）
+--    ⭐ 「他人のカード」も RLS で見えないので select が NULL を返す。
+--       存在しない uuid と同じ経路なので、この1本で両方をはじけていることになる
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+
+  select public.swap_item_order(
+    (select id from public.items order by sort_order limit 1),
+    '00000000-0000-0000-0000-000000000000'
+  );
+  -- 期待: ERROR  swap_item_order: item not found or not visible to caller
+  -- 🚨 壊れたら: 正常終了（＝1本目だけ動いた可能性がある）
+rollback;
+
+-- ⑫ 隣同士を入れ替えても sort_order が重複しない（⑪の対照実験）
+--    ⭐⭐ この工程の本体をそのまま測っている。「片方だけ動いて2行が同じ sort_order を
+--         持つ」がまさに検出したいもので、カードが何枚あっても成立する
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+
+  select public.swap_item_order(
+    (select id from public.items order by sort_order limit 1),
+    (select id from public.items order by sort_order offset 1 limit 1)
+  );
+
+  select count(*) = count(distinct sort_order) as "重複が無い" from public.items;
+  -- 期待: t
+  -- 🚨 壊れたら: f（片方だけ動いて2行が同じ sort_order を持った）
+rollback;

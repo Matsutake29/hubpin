@@ -32,7 +32,9 @@ export function DeleteButton({ action }: { action: () => Promise<void> }) {
       </button>
       <form action={action}>
         {/* 地と文字を反転させて「ここで確定する」ことを示す。
-            🚨 赤は使わない。トークンに危険色が無く、v1 は8色で凍結している */}
+            🚨 危険色は使わない。2026-08-20 に --c-danger を足したが、あれは
+            「入力が通らなかった」ことを示す色として入れたもの。削除の確定に同じ赤を当てると、
+            直せる失敗（バリデーション）と直せない操作（削除）が同じ色になる */}
         <button
           type="submit"
           className="rounded-(--radius) bg-fg px-2.5 py-1 text-xs font-bold text-canvas"

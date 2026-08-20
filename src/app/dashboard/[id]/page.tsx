@@ -18,14 +18,18 @@ export default async function EditItemPage({ params }: { params: Promise<{ id: s
   if (!item) notFound()
 
   return (
-    <ItemForm
-      action={updateItem.bind(null, id)}
-      defaultItem={{
-        ...item,
-        type: item.type as ItemInput['type'],
-        url: item.url ?? '',
-        description: item.description ?? '',
-      }}
-    />
+    // 外枠と余白は dashboard/layout.tsx が持つ。ここは幅だけ絞る（new/page.tsx と同じ）
+    <main className="flex max-w-xl flex-col gap-5">
+      <h1 className="text-2xl font-bold tracking-tight">カードを編集</h1>
+      <ItemForm
+        action={updateItem.bind(null, id)}
+        defaultItem={{
+          ...item,
+          type: item.type as ItemInput['type'],
+          url: item.url ?? '',
+          description: item.description ?? '',
+        }}
+      />
+    </main>
   )
 }

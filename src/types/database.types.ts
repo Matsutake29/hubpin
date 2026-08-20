@@ -127,7 +127,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      swap_item_order: {
+        Args: { a_id: string; b_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

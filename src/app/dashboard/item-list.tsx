@@ -58,13 +58,27 @@ export function ItemList({ items }: { items: Item[] }) {
             item.visible ? 'bg-canvas' : 'bg-sub'
           }`}
         >
+          {/* 🚨 disabled ではなく aria-disabled。disabled な要素はブラウザ仕様で
+              フォーカスを保持できず、「上へ」を押して1番目に着いた瞬間に
+              index === 0 が真になって disabled になり、フォーカスが消えていた。
+              ⭐ 2026-08-21 にキーボードで切り分けた。移動先が1番目にならない場合
+              （3番目→2番目）はフォーカスが残ったので、原因は Server Action の
+              再レンダリングではなく disabled だと確定した。
+              ⚠️ aria-disabled は送信を止めない。止めなくてよい —— actions.ts の
+              moveItem が index === 0 / items.length - 1 を先に return しており、
+              「ボタンを disabled にしても Server Action は直接叩ける」前提で
+              元から守ってあるため（actions.ts の同名コメント）。
+              🚨 opacity で薄くしない。aria-disabled は「無効だ」と伝えるだけで
+              要素自体は生きているので、WCAG 1.4.11 の「無効な部品」例外に
+              寄りかかる根拠が弱い。--c-line-strong（ライト 3.54:1 / ダーク 3.46:1）
+              へ落として、弱く見せつつ境界の 3:1 は満たす */}
           <div className="flex shrink-0 flex-col gap-1.5 text-muted">
             <form action={moveItem.bind(null, item.id, 'up')}>
               <button
                 type="submit"
-                disabled={index === 0}
+                aria-disabled={index === 0}
                 aria-label="上へ移動"
-                className="px-1 disabled:opacity-40"
+                className="px-1 aria-disabled:cursor-not-allowed aria-disabled:text-line-strong"
               >
                 <ArrowIcon direction="up" />
               </button>
@@ -72,9 +86,9 @@ export function ItemList({ items }: { items: Item[] }) {
             <form action={moveItem.bind(null, item.id, 'down')}>
               <button
                 type="submit"
-                disabled={index === items.length - 1}
+                aria-disabled={index === items.length - 1}
                 aria-label="下へ移動"
-                className="px-1 disabled:opacity-40"
+                className="px-1 aria-disabled:cursor-not-allowed aria-disabled:text-line-strong"
               >
                 <ArrowIcon direction="down" />
               </button>

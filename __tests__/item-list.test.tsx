@@ -18,31 +18,54 @@ const items = [
 ]
 
 describe('ItemList', () => {
-  test('先頭の「上へ移動」だけが押せない', () => {
+  // 🚨 hasAttribute は使わない。aria-disabled は false のときも属性自体は出るので、
+  //    hasAttribute だと「無効かどうか」ではなく「属性があるか」しか見ていないことになり、
+  //    全件 true で通ってしまう。値を読んで 'true' / 'false' を比べる
+  test('先頭の「上へ移動」だけが無効になる', () => {
     render(<ItemList items={items} />)
 
     const ups = screen.getAllByRole('button', { name: '上へ移動' })
 
-    expect(ups[0].hasAttribute('disabled')).toBe(true)
-    expect(ups[1].hasAttribute('disabled')).toBe(false)
-    expect(ups[2].hasAttribute('disabled')).toBe(false)
+    expect(ups[0].getAttribute('aria-disabled')).toBe('true')
+    expect(ups[1].getAttribute('aria-disabled')).toBe('false')
+    expect(ups[2].getAttribute('aria-disabled')).toBe('false')
   })
 
-  test('末尾の「下へ移動」だけが押せない', () => {
+  test('末尾の「下へ移動」だけが無効になる', () => {
     render(<ItemList items={items} />)
 
     const downs = screen.getAllByRole('button', { name: '下へ移動' })
 
-    expect(downs[0].hasAttribute('disabled')).toBe(false)
-    expect(downs[1].hasAttribute('disabled')).toBe(false)
-    expect(downs[2].hasAttribute('disabled')).toBe(true)
+    expect(downs[0].getAttribute('aria-disabled')).toBe('false')
+    expect(downs[1].getAttribute('aria-disabled')).toBe('false')
+    expect(downs[2].getAttribute('aria-disabled')).toBe('true')
   })
 
-  test('カードが1枚のときは上も下も押せない', () => {
+  test('カードが1枚のときは上も下も無効になる', () => {
     render(<ItemList items={[items[0]]} />)
 
-    expect(screen.getByRole('button', { name: '上へ移動' }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '下へ移動' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '上へ移動' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    )
+    expect(screen.getByRole('button', { name: '下へ移動' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    )
+  })
+
+  // ⭐ これが 2026-08-21 の修正の本体。disabled な要素はブラウザ仕様でフォーカスを
+  //    保持できないため、「上へ」を押して1番目に着いた瞬間に disabled になって
+  //    フォーカスが消えていた。aria-disabled なら要素は生きたままなので消えない。
+  //    🚨 属性名を戻すと同じ不具合が再発するので、無効な側にこそ disabled が
+  //    「付いていないこと」を固定する
+  test('無効なボタンでも disabled 属性は付けない（フォーカスを保持するため）', () => {
+    render(<ItemList items={[items[0]]} />)
+
+    const up = screen.getByRole('button', { name: '上へ移動' })
+    const down = screen.getByRole('button', { name: '下へ移動' })
+
+    expect(up.getAttribute('aria-disabled')).toBe('true')
+    expect(up.hasAttribute('disabled')).toBe(false)
+    expect(down.hasAttribute('disabled')).toBe(false)
   })
 
   test('カードが0枚のときは空状態が出る', () => {

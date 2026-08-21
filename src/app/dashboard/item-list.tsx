@@ -89,12 +89,15 @@ export function ItemList({ items }: { items: Item[] }) {
 
           {/* 🚨 見えている語は「今の状態」で、押した先の状態ではない。
               押すと何になるかは aria-label でだけ言う（読み上げは動作を求めるため）。
-              文字を「非公開にする」にすると、今どちらなのかが読めなくなる */}
+              文字を「非公開にする」にすると、今どちらなのかが読めなくなる。
+              🚨 枠は border-line ではない。押すと公開状態が変わるボタンなので
+              「操作できる部品の境界」として 3:1 が要る（--c-border は 1.26:1）。
+              ⭐ すぐ外の <li> の枠は行の区切り＝装飾なので border-line のまま */}
           <form action={toggleVisible.bind(null, item.id, item.visible)} className="shrink-0">
             <button
               type="submit"
               aria-label={item.visible ? '非公開にする' : '公開する'}
-              className="flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-muted transition-colors hover:border-main hover:text-main"
+              className="flex items-center gap-1.5 rounded-full border border-line-strong px-2.5 py-1 text-xs text-muted transition-colors hover:border-main hover:text-main"
             >
               <span
                 aria-hidden="true"

@@ -39,6 +39,139 @@ export type Database = {
   }
   public: {
     Tables: {
+      feed_entries: {
+        Row: {
+          fetched_at: string
+          id: string
+          published_at: string | null
+          source_id: string
+          thumbnail_url: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          fetched_at?: string
+          id?: string
+          published_at?: string | null
+          source_id: string
+          thumbnail_url?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          fetched_at?: string
+          id?: string
+          published_at?: string | null
+          source_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_entries_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "feed_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_sources: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          endpoint_url: string
+          fallback_url: string | null
+          id: string
+          item_id: string
+          last_fetched_at: string | null
+          last_status: string | null
+          max_entries: number
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          endpoint_url: string
+          fallback_url?: string | null
+          id?: string
+          item_id: string
+          last_fetched_at?: string | null
+          last_status?: string | null
+          max_entries?: number
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string
+          fallback_url?: string | null
+          id?: string
+          item_id?: string
+          last_fetched_at?: string | null
+          last_status?: string | null
+          max_entries?: number
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_sources_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_sources_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fetch_logs: {
+        Row: {
+          entry_count: number | null
+          error_message: string | null
+          id: string
+          run_at: string
+          source_id: string
+          status: string
+        }
+        Insert: {
+          entry_count?: number | null
+          error_message?: string | null
+          id?: string
+          run_at?: string
+          source_id: string
+          status: string
+        }
+        Update: {
+          entry_count?: number | null
+          error_message?: string | null
+          id?: string
+          run_at?: string
+          source_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fetch_logs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "feed_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           created_at: string

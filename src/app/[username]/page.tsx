@@ -69,7 +69,11 @@ export default async function UserPage({ params }: { params: Promise<{ username:
 
   const { data: items } = await supabase
     .from('items')
-    .select('id, type, title, description, url, sort_order')
+    .select(`
+      id, type, title, description, url, sort_order,
+      feed_sources ( max_entries, last_fetched_at,
+      feed_entries ( id, title, url, published_at, thumbnail_url ) )
+    `)
     .eq('user_id', profile.id)
     // RLS（to anon using (visible = true)）でも絞られるが、ここでも絞る。
     // 2026-08-10 に PERMISSIVE の OR 結合で非公開カードが漏れた場所で、

@@ -223,3 +223,28 @@ begin;
   -- 期待: ERROR  permission denied for table fetch_logs
   -- 🚨 壊れたら: 0 が返る（grant select を書いてしまっている）
 rollback;
+
+-- (17) 🚨 アプリからは replace_feed_entries() を呼べない（revoke execute の確認）
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  select public.replace_feed_entries(
+    '00000000-0000-0000-0000-000000000000'::uuid,
+    '[]'::jsonb
+  );
+  -- 期待: ERROR  permission denied for function replace_feed_entries
+  -- 🚨 壊れたら: 実行できてしまう（revoke の書き忘れ、または後から grant した）
+rollback;
+
+-- (18) 🚨 service role からは通る（grant execute ＋ テーブルの grant の確認）
+--      ⭐ (17) の裏返し。「false になるべきものが false か」だけでなく
+--         「true になるべきものが true か」も見る。片方だけだと工程13 で落ちる。
+begin;
+  set local role service_role;
+  select public.replace_feed_entries(
+    (select id from public.feed_sources limit 1),
+    '[{"title":"検証用","url":"https://example.com/","published_at":null,"thumbnail_url":null}]'::jsonb
+  ) as "入った件数";
+  -- 期待: 1
+  -- 🚨 壊れたら: permission denied（grant のどれかが足りない）
+rollback;

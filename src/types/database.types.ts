@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -260,6 +260,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      replace_feed_entries: {
+        Args: { p_entries: Json; p_source_id: string }
+        Returns: number
+      }
       swap_item_order: {
         Args: { a_id: string; b_id: string }
         Returns: undefined

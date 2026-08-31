@@ -5,14 +5,11 @@ import { fetchEntries } from '@/lib/feed'
 // フィードを取得して feed_entries に入れ替える入口。
 //
 // ⭐ route handler にしたのは、工程13 の Vercel Cron が「URL を叩く」仕組みだから。
-//    ここがそのまま Cron の入口になる。スクリプトにすると工程13 で入口を書き直すことになる。
+//    ここがそのまま Cron の入口になる。
 //
 // 🚨 本番では 404 を返す。いま本番を守っているのは下の3行だけ。
 //    これを外すのは CRON_SECRET のチェックを入れるのと同時（工程13）。
-//    ⚠️ 片方だけやると、誰でも叩ける入口が本番にできる。しかも「動いてしまう」ので
-//       テストでは落ちない。コードでは守れないのでここに書く。
-//    ⭐ 副次効果として next build も守っている。ビルドは NODE_ENV=production で走るため、
-//       評価されても createServiceClient() に到達しない（CI に SUPABASE_SECRET_KEY は無い）。
+//    ⚠️ 片方だけやると誰でも叩ける入口が本番にできる。しかも「動いてしまう」のでテストでは落ちない。
 export async function GET() {
   if (process.env.NODE_ENV === 'production') {
     return new NextResponse(null, { status: 404 })
@@ -37,10 +34,8 @@ export async function GET() {
     try {
       const entries = await fetchEntries(source)
 
-      // 🚨 replace_feed_entries() は「渡されたものに入れ替える」だけなので、
-      //    空配列を渡すと既存のエントリーが全部消える。
-      //    ⭐「取れなかった」を「0件だった」に変換しないよう、保存の手前で止める。
-      //       index.ts の default: と wordpress.ts の fallback 失敗も、同じ理由で例外にしてある。
+      // 🚨 replace_feed_entries() は渡されたものに入れ替えるだけなので、空配列を渡すと
+      //    既存のエントリーが全部消える。「取れなかった」を「0件だった」に変換しない。
       if (entries.length === 0) {
         throw new Error('取得は成功したが0件だった')
       }
@@ -65,8 +60,5 @@ export async function GET() {
     }
   }
 
-  // ⚠️ 全媒体が失敗しても 200 が返る。手で叩いて目で見る工程12 では足りるが、工程13 で
-  //    Cron が叩くようになると「成功したことになっているのに1件も更新されていない」が
-  //    起こりうる。→ 工程13 へ送る（fetch_logs の grant と一緒に扱う）。
   return NextResponse.json(results)
 }

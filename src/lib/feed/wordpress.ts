@@ -49,9 +49,5 @@ export async function fetchWordPress(
     entries = parseRss(xml)
   }
 
-  // 🚨 RSS は古い順で返る（08-28 実測）。取得経路によらず、切る前に並べ替える。
-  //    ISO 8601 は辞書順＝時系列順なので文字列比較でよい（toIsoOrNull で揃えてある）。
-  return [...entries]
-    .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''))
-    .slice(0, max)
+  return entries
 }

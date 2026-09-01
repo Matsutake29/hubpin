@@ -9,7 +9,16 @@ type FeedSource = Pick<
   'provider' | 'endpoint_url' | 'fallback_url' | 'max_entries'
 >
 
-export async function fetchEntries(source: FeedSource): Promise<NormalizedEntry[]> {
+// 🚨 並べ替えと件数の保証はここ1箇所だけ。アダプター側には書かない。
+//    ⚠️ 媒体ごとに書くと、書き忘れても型は通る。しかも Zenn は新しい順で返るので
+//       画面を見ても気づけない（壊れるのは WP のフォールバック経路だけ）。
+export function sortAndTake(entries: NormalizedEntry[], max: number): NormalizedEntry[] {
+  return [...entries]
+    .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''))
+    .slice(0, max)
+}
+
+async function fetchRaw(source: FeedSource): Promise<NormalizedEntry[]> {
   switch (source.provider) {
     case 'wordpress':
       return fetchWordPress(source.endpoint_url, source.fallback_url, source.max_entries)
@@ -19,4 +28,8 @@ export async function fetchEntries(source: FeedSource): Promise<NormalizedEntry[
     default:
       throw new Error(`未実装、または不明な provider: ${source.provider}`)
   }
+}
+
+export async function fetchEntries(source: FeedSource): Promise<NormalizedEntry[]> {
+  return sortAndTake(await fetchRaw(source), source.max_entries)
 }

@@ -1,6 +1,7 @@
 import type { NormalizedEntry } from './types'
 import type { Database } from '@/types/database.types'
 import { fetchWordPress } from './wordpress'
+import { fetchZenn } from './zenn'
 
 // 取得に必要な列だけを DB の型から取り出す。
 // 🚨 独自に型を書き直さない。列名や型が変わったら、ここで tsc が落ちてほしい。
@@ -23,7 +24,10 @@ async function fetchRaw(source: FeedSource): Promise<NormalizedEntry[]> {
     case 'wordpress':
       return fetchWordPress(source.endpoint_url, source.fallback_url, source.max_entries)
 
-    // 🚧 zenn は手順4 / github は手順5。
+    case 'zenn':
+      return fetchZenn(source.endpoint_url)
+
+    // 🚧 github は手順5。
     // 🚨 空配列を返さない。保存側が「0件で成功」と解釈して、既存のエントリーを全部消す。
     default:
       throw new Error(`未実装、または不明な provider: ${source.provider}`)

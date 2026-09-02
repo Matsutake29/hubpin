@@ -30,4 +30,9 @@ export const env = {
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   ),
+
+  // 📌 これだけ required() に通さない。Vercel の Production にしか置かない値なので、
+  //    ローカルと Preview では「無いのが正常」。required にすると npm run dev が落ちる。
+  // ⭐ 型が string | undefined のまま残るので、使う側は分岐を書かないと tsc が通らない。
+  gaId: process.env.NEXT_PUBLIC_GA_ID,
 }

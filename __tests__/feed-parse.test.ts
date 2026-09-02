@@ -71,10 +71,7 @@ describe('sortAndTake', () => {
 
   // ⚠️ sort は破壊的メソッド。[...entries] のコピーを外すと、呼び出し元の配列が並べ替わる。
   test('渡した配列を書き換えない', () => {
-    const input = [
-      entry('古', '2026-08-11T00:00:00.000Z'),
-      entry('新', '2026-08-31T00:00:00.000Z'),
-    ]
+    const input = [entry('古', '2026-08-11T00:00:00.000Z'), entry('新', '2026-08-31T00:00:00.000Z')]
 
     sortAndTake(input, 2)
 

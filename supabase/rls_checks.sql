@@ -9,6 +9,12 @@
 --    2026-08-10 に実際それで見落とした（工程4の時点では items が matsutake の分しか無く、
 --    他人の行が見えていても件数が変わらなかった → ⑥ を追加）。
 --    ⭐ 新しい検証は「件数」ではなく「不変量」で書くこと。
+--
+-- 🚨 ただし「不変量で書けば安全」ではない。⭐ 対象が0件のときは、中身を見ずに真になる。
+--    2026-08-25 に工程12 の (13)(14) がこれで、テーブルを作った直後（feed_entries が空）に
+--    実行すると、ポリシーが1行も無くても合格した。
+--    ⭐ 08-10 は「データが増えると嘘になる」、こちらは「データが無いと嘘になる」。
+--    → 検証は「その検証が落ちうるデータがあるか」を先に確かめてから実行すること。
 
 -- ① 未認証（anon）は公開カードを読める
 begin;
@@ -164,4 +170,81 @@ begin;
   select count(*) = count(distinct sort_order) as "重複が無い" from public.items;
   -- 期待: t
   -- 🚨 壊れたら: f（片方だけ動いて2行が同じ sort_order を持った）
+rollback;
+
+-- (13) 🚨 未認証は「公開カードのエントリー」だけ読める
+--      ⭐ 件数で書かない。visible = false のカードのエントリーが混ざっていないことを
+--         不変量で見る（rls_checks.sql 冒頭のルール）
+--      ⚠️ 🆕 2026-08-25: feed_entries が空のあいだは t が返るが、それは検証になっていない。
+--         0件を数えているので、ポリシーを1行も書いていなくても合格する（空虚に真）。
+--         ⭐ 08-10 の教訓は「件数で書くとデータが増えたとき嘘になる」だったが、
+--            不変量で書いても「対象が0件のとき中身を見ずに合格する」ほうは残っていた。
+--         🚨 手順2 でダミー行を入れた後に実行すること。
+begin;
+  set local role anon;
+  select count(*) = 0 as "非公開カードのエントリーが混ざっていない"
+  from public.feed_entries fe
+  join public.feed_sources fs on fs.id = fe.source_id
+  join public.items i on i.id = fs.item_id
+  where i.visible = false;
+  -- 期待: t
+  -- 🚨 壊れたら: f（2段辿りのどこかが抜けている）
+rollback;
+
+-- (14) 🚨 ログイン中に他人のエントリーが見えない（(6) の feed 版）
+--      PERMISSIVE の OR 結合を踏んでいないことの確認
+--      ⚠️ 🆕 2026-08-25: (13) と同じ理由で、feed_entries が空のあいだは実行しない。
+--         🚨 手順2 でダミー行を入れた後に実行すること。
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  select count(*) = 0 as "他人のエントリーが見えない"
+  from public.feed_entries fe
+  join public.feed_sources fs on fs.id = fe.source_id
+  where fs.user_id <> 'b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b';
+  -- 期待: t
+  -- 🚨 壊れたら: f（anon 用ポリシーに to anon が抜けている）
+rollback;
+
+-- (15) 🚨 アプリからは feed_entries に書けない（ポリシーが無いことの確認）
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  insert into public.feed_entries (source_id, title, url)
+  values ((select id from public.feed_sources limit 1), 'x', 'https://example.com');
+  -- 期待: ERROR  permission denied for table feed_entries
+  -- 🚨 壊れたら: 成功する（grant insert を書いてしまっている）
+rollback;
+
+-- (16) fetch_logs は未認証から一切見えない
+begin;
+  set local role anon;
+  select count(*) from public.fetch_logs;
+  -- 期待: ERROR  permission denied for table fetch_logs
+  -- 🚨 壊れたら: 0 が返る（grant select を書いてしまっている）
+rollback;
+
+-- (17) 🚨 アプリからは replace_feed_entries() を呼べない（revoke execute の確認）
+begin;
+  set local role authenticated;
+  set local "request.jwt.claims" = '{"sub":"b3d7dbd6-1887-4640-8e43-5fa03c3c1e6b"}';
+  select public.replace_feed_entries(
+    '00000000-0000-0000-0000-000000000000'::uuid,
+    '[]'::jsonb
+  );
+  -- 期待: ERROR  permission denied for function replace_feed_entries
+  -- 🚨 壊れたら: 実行できてしまう（revoke の書き忘れ、または後から grant した）
+rollback;
+
+-- (18) 🚨 service role からは通る（grant execute ＋ テーブルの grant の確認）
+--      ⭐ (17) の裏返し。「false になるべきものが false か」だけでなく
+--         「true になるべきものが true か」も見る。片方だけだと工程13 で落ちる。
+begin;
+  set local role service_role;
+  select public.replace_feed_entries(
+    (select id from public.feed_sources limit 1),
+    '[{"title":"検証用","url":"https://example.com/","published_at":null,"thumbnail_url":null}]'::jsonb
+  ) as "入った件数";
+  -- 期待: 1
+  -- 🚨 壊れたら: permission denied（grant のどれかが足りない）
 rollback;

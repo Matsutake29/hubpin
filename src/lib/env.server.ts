@@ -12,10 +12,18 @@ function required(name: string, value: string | undefined): string {
   return value
 }
 
-// 🚨 モジュールの読み込み時ではなく、呼ばれたときに検証する。
-//    CI の build には DEMO_EMAIL / DEMO_PASSWORD を渡していない（.github/workflows/ci.yml は
-//    NEXT_PUBLIC_ の2つだけ）。モジュールレベルで検証すると、そこでビルドが落ちる。
+// 🚨 以下はどれも、モジュールの読み込み時ではなく「呼ばれたとき」に検証する。
+//    モジュールレベルで検証すると、値を渡していない環境（CI の build）でそこが落ちる。
 // ⭐ NEXT_PUBLIC_ と違ってビルド時に埋め込む必要がない値なので、遅延で足りる。
+
+// 🚨 service role キー。RLS をバイパスできる値なので、読むのはサーバー側だけ。
+//    → 使う側は src/utils/supabase/service.ts
+export function supabaseSecretKey() {
+  return required('SUPABASE_SECRET_KEY', process.env.SUPABASE_SECRET_KEY)
+}
+
+// ⚠️ CI の build には DEMO_EMAIL / DEMO_PASSWORD を渡していない
+//    （.github/workflows/ci.yml は NEXT_PUBLIC_ の2つだけ）。
 export function demoCredentials() {
   return {
     email: required('DEMO_EMAIL', process.env.DEMO_EMAIL),

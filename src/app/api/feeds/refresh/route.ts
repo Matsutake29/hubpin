@@ -33,12 +33,18 @@ async function writeFetchLog(
 // ⭐ route handler にしたのは、工程13 の Vercel Cron が「URL を叩く」仕組みだから。
 //    ここがそのまま Cron の入口になる。
 //
-// 🚨 本番では 404 を返す。いま本番を守っているのは下の3行だけ。
-//    これを外すのは CRON_SECRET のチェックを入れるのと同時（工程13）。
-//    ⚠️ 片方だけやると誰でも叩ける入口が本番にできる。しかも「動いてしまう」のでテストでは落ちない。
-export async function GET() {
-  if (process.env.NODE_ENV === 'production') {
-    return new NextResponse(null, { status: 404 })
+// 🚨 公開エンドポイントなので、CRON_SECRET を知っている呼び出し以外は 401 で落とす。
+//    Vercel Cron は環境変数 CRON_SECRET を Authorization: Bearer <値> として自動で載せて送ってくる。
+//    ⚠️ 工程12 までは「本番なら 404」で守っていた。この 401 がその代わりなので、
+//       片方だけ外すと誰でも叩ける入口が本番にできる。だから同時に入れ替える。
+export async function GET(request: Request) {
+  // 🚨 !cronSecret を先に見る。環境変数を入れ忘れた環境では「全部 401」になるのが正しい。
+  //    ⚠️ この判定が無いと、未設定のとき cronSecret が undefined になり、
+  //       `Bearer undefined` を送れば誰でも通る入口ができる。
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return new NextResponse('Unauthorized', { status: 401 })
   }
 
   const supabase = createServiceClient()

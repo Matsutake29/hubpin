@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/utils/supabase/service'
 import { fetchEntries } from '@/lib/feed'
+import { revalidatePublicPage } from '@/lib/revalidate'
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
@@ -51,13 +52,18 @@ export async function GET(request: Request) {
 
   const { data: sources, error } = await supabase
     .from('feed_sources')
-    .select('id, provider, endpoint_url, fallback_url, max_entries')
+    .select('id, provider, endpoint_url, fallback_url, max_entries, user_id')
     .eq('enabled', true)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // ⭐ 成功したソースの持ち主だけを集める。1人が3媒体持っていても
+  //    revalidatePath は1回で済ませたいので Set にする。
+  //    🚨 失敗したソースは replace_feed_entries を呼んでいない ＝ 公開ページの中身は
+  //       変わっていないので入れない。
+  const updatedUserIds = new Set<string>()
   const results: { provider: string; saved?: number; error?: string }[] = []
 
   // 🚨 try/catch は for の中に置く。1媒体が失敗しても他の媒体は続ける（手順書 3-4 の障害設計）。
@@ -85,6 +91,7 @@ export async function GET(request: Request) {
         entryCount: saved ?? 0,
       })
 
+      updatedUserIds.add(source.user_id)
       results.push({ provider: source.provider, saved: saved ?? 0 })
     } catch (e) {
       // 📌 成功時の last_status は関数の中で書いている（delete / insert と同じトランザクションに
@@ -102,6 +109,12 @@ export async function GET(request: Request) {
 
       results.push({ provider: source.provider, error: String(e) })
     }
+  }
+
+  // 📌 1人ずつ profiles を引くので、利用者が増えると人数分のクエリになる。
+  //    いまは enabled なソースの持ち主が実質1人なので、素直な形を選んだ。
+  for (const userId of updatedUserIds) {
+    await revalidatePublicPage(supabase, userId)
   }
 
   return NextResponse.json(results)

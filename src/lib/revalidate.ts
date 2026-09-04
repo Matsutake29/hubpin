@@ -15,11 +15,20 @@ import type { Database } from '@/types/database.types'
 //       固定されていて service client を渡せなかった。「置き場所」と「引数の型」は
 //       別の問題で、両方に手当てが要る。
 export async function revalidatePublicPage(supabase: SupabaseClient<Database>, userId: string) {
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('username')
     .eq('id', userId)
     .maybeSingle()
+
+  // 🚨 supabase-js はクエリのエラーで throw しない。GRANT を忘れていると
+  //    permission denied が error に入って data が null になり、
+  //    if (profile) を通らないだけで例外もログも出ない ＝ 静かに再検証されなくなる。
+  //    「効かなくなったことに気づけない」を潰すため、error は必ず出す。
+  if (error) {
+    console.error('profiles の読み取りに失敗（再検証をスキップ）:', error.message)
+    return
+  }
 
   if (profile) revalidatePath(`/${profile.username}`)
 }

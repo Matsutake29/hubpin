@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { itemSchema, type ItemInput } from '@/lib/schemas/item'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { revalidatePublicPage } from '@/lib/revalidate'
 
 // フォームが送ってきた生の値。検証に失敗したとき画面へ返して入力を保つ
 type ItemValues = {
@@ -22,16 +23,6 @@ export type ItemState =
   | undefined
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>
-
-async function revalidatePublicPage(supabase: SupabaseClient, userId: string) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', userId)
-    .maybeSingle()
-
-  if (profile) revalidatePath(`/${profile.username}`)
-}
 
 // createItem と updateItem は、ログイン確認 → 生値の組み立て → 検証 → エラー整形 まで
 // 20行が完全に同じだった。1箇所にまとめる。

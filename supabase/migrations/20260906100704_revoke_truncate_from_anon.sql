@@ -1,0 +1,15 @@
+-- 🚨 TRUNCATE には RLS が効かない。ポリシーが適用されるのは SELECT / INSERT /
+--    UPDATE / DELETE だけで、TRUNCATE はテーブル単位の権限としてポリシーを見ない。
+--    「RLS があるから大丈夫」が唯一通じない権限がこれ。
+-- 📌 Supabase 初回の grant all（20260806032348 以前）の残り。そのあと
+--    INSERT / UPDATE / DELETE / SELECT だけを必要なぶんに絞ったので、
+--    TRUNCATE・REFERENCES・TRIGGER が 3ロール × 5テーブルに取り残されていた。
+-- ⭐ 2026-09-06 実測: 現時点で anon から届く経路は無い。
+--    ① PostgREST は TRUNCATE を発行しない（SELECT/INSERT/UPDATE/DELETE と RPC だけ）
+--    ② public の関数4つの EXECUTE を確認。replace_feed_entries は anon も
+--       authenticated も false。swap_item_order は anon 可だが security invoker
+--       なので、中の UPDATE が items の権限で落ちる
+--    🚨 それでも剥がすのは、「今は届かない」が「経路が無い」ではないため。
+--       anon から呼べる SQL 関数を1つ足した日に、RLS が守らない場所として残る。
+-- ⚠️ service_role からは剥がさない。サーバー側でしか使わないので別論点。
+revoke truncate on all tables in schema public from anon, authenticated;

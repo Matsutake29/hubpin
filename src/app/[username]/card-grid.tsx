@@ -70,7 +70,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {/* 塗り＝外部へ飛ぶ。note / feed は中空のまま（開くことを示す） */}
+                {/* 塗り＝外部へ飛ぶ（link / feed）。note だけ中空で、その場で開くことを示す */}
                 <span aria-hidden="true" className="pin-head pin-head--fill" />
                 <span className="font-bold">
                   {item.title}

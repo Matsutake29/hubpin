@@ -118,7 +118,7 @@ erDiagram
 | `profiles.username`                           | `check (username not in ('about','dashboard','login','api','auth','_next','favicon'))` | アプリのルートと衝突する語を予約。**アプリのバリデーションは書き忘れるが、DB の制約は必ず通る**                                                               |
 | `items.user_id`                               | `references public.profiles(id) on delete cascade`                                     | 持ち主が消えたらカードも消える                                                                                                                                |
 | `items.type`                                  | `check (type in ('link','note','feed'))`                                               | `enum` を使わなかったのは、**値の追加に `alter type` が要り、同一トランザクション内で追加値を使えない**ため。`text` ＋ `CHECK` なら制約を張り替えるだけで済む |
-| `items (user_id, sort_order)`                 | インデックス                                                                           | 公開ページの読み方が**「この人のカードを並び順で全部」しかない**ため                                                                                          |
+| `items (user_id, sort_order)`                 | インデックス                                                                           | **公開ページの読み方が「この人のカードを並び順で全部」しかない**ため                                                                                          |
 | `feed_sources.item_id`                        | `unique` ＋ `references public.items(id) on delete cascade`                            | **ER 図の「1対1」を守っているのはこの `unique`**。2本目が同じカードに刺さると、表示側がどちらを出すか決められなくなる                                         |
 | `feed_sources.provider`                       | `check (provider in ('wordpress','zenn','github'))`                                    | 値を1つ増やすたびにアダプターの実装が要る。**取りに行くコードが無い値を、DB に入れさせない**                                                                  |
 | `feed_sources.max_entries`                    | `check (max_entries between 1 and 10)`                                                 | 上限が無いと、1回の取得で数百件が入りうる                                                                                                                     |
@@ -276,7 +276,7 @@ v1.0 で**落としたもの**と、その理由。
 | **カードの自由配置（x/y 座標）**         | ピンボードに見えるのは CSS だけで、**データ構造には要らない**。座標を持つと画面幅ごとに破綻する                      |
 | **Bento Grid の作り込み**                | 移植元は枚数が固定で、手で調整して成立していた。**枚数が DB から可変で来ると破綻する**ので、レイアウトごと再設計した |
 | **動的 OGP 画像**                        | 静的な OGP で足りている。生成を挟むと、**静的配信の速さと引き換え**になる                                            |
-| **`pages` テーブル（作品の下層ページ）** | 設計はした。ただし**「分散した発信を1枚に集める」のが目的**なので、下層を足すと目的と逆を向く                        |
+| **`pages` テーブル（作品の下層ページ）** | 設計はした。**ただし「分散した発信を1枚に集める」のが目的**なので、下層を足すと目的と逆を向く                        |
 
 ## セットアップ
 

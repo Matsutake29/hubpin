@@ -25,26 +25,19 @@ export async function resetDemoData(supabase: SupabaseClient) {
   } = await supabase.auth.getUser()
   if (!user) return
 
-  const { data: deleted, error: deleteError } = await supabase
-    .from('items')
-    .delete()
-    .eq('user_id', user.id)
-    .select()
+  const { error: deleteError } = await supabase.from('items').delete().eq('user_id', user.id)
 
   if (deleteError) {
     console.error('resetDemoData delete failed:', deleteError.message)
     return
   }
-  console.log('deleted:', deleted.length)
 
-  const { data: inserted, error: insertError } = await supabase
+  const { error: insertError } = await supabase
     .from('items')
     .insert(DEMO_ITEMS.map((item) => ({ ...item, user_id: user.id })))
-    .select()
 
   if (insertError) {
     console.error('resetDemoData insert failed:', insertError.message)
     return
   }
-  console.log('inserted:', inserted.length)
 }

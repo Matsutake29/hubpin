@@ -70,12 +70,19 @@ export async function createItem(prevState: ItemState, formData: FormData): Prom
   if (!prepared.ok) return prepared.state
   const { supabase, userId, data: parsedData } = prepared
 
-  const { data: last } = await supabase
+  const { data: last, error: lastError } = await supabase
     .from('items')
     .select('sort_order')
     .order('sort_order', { ascending: false })
     .limit(1)
     .maybeSingle()
+
+  // 採番の元が読めないまま入れると、既存のカードがあっても sort_order = 1 で入り、
+  // 並べ替えのボタンが効かないカードができる（#48）
+  if (lastError) {
+    console.error('sort_order の採番に失敗:', lastError.message)
+    return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
+  }
 
   const { error } = await supabase.from('items').insert({
     ...parsedData,

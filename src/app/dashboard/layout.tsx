@@ -9,9 +9,11 @@ import { logout } from '@/app/login/actions'
 export default async function DashboardLayout({ children }: LayoutProps<'/dashboard'>) {
   const client = await createClient()
   const { data: auth } = await client.auth.getClaims()
-  const { data: profile } = auth
-    ? await client.from('profiles').select('username').eq('id', auth.claims.sub).single()
-    : { data: null }
+  const { data: profile, error } = auth
+    ? await client.from('profiles').select('username').eq('id', auth.claims.sub).maybeSingle()
+    : { data: null, error: null }
+  // 読めなかったときにヘッダーのリンクが黙って消えないよう、ログに残す（#48）
+  if (error) console.error('profiles の読み取りに失敗（ヘッダー）:', error.message)
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-8 sm:gap-10 sm:py-10">

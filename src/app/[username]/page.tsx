@@ -6,8 +6,10 @@ import { CardGrid } from './card-grid'
 
 export async function generateStaticParams() {
   const supabase = createPublicClient()
-  const { data } = await supabase.from('profiles').select('username')
-  return (data ?? []).map((p) => ({ username: p.username }))
+  const { data, error } = await supabase.from('profiles').select('username')
+  // 読めないまま [] を返すと、プリレンダー0件のままビルドが通ってしまう。落ちたほうがよい（#48）
+  if (error) throw new Error(`profiles の読み取りに失敗（generateStaticParams）: ${error.message}`)
+  return data.map((p) => ({ username: p.username }))
 }
 
 export const revalidate = 3600
@@ -16,11 +18,14 @@ export const revalidate = 3600
 // Next.js は fetch を自動で重複排除するが、Supabase クライアント経由の呼び出しは対象外
 const getProfile = cache(async (username: string) => {
   const supabase = createPublicClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('id, username, display_name, display_name_en, title')
     .eq('username', username)
     .maybeSingle()
+  // 🚨 「行が無い」と「読めなかった」を同じ null にしない（#61）。
+  //    null を返すと notFound() に流れ、その 404 が revalidate の間キャッシュされる
+  if (error) throw new Error(`profiles の読み取りに失敗: ${error.message}`)
   return data
 })
 
@@ -67,7 +72,7 @@ export default async function UserPage({ params }: { params: Promise<{ username:
 
   const supabase = createPublicClient()
 
-  const { data: items } = await supabase
+  const { data: items, error } = await supabase
     .from('items')
     .select(
       `
@@ -83,6 +88,9 @@ export default async function UserPage({ params }: { params: Promise<{ username:
     .eq('visible', true)
     .order('sort_order')
 
+  // 読めないまま描画すると、カード0枚のページがキャッシュされる（#61）
+  if (error) throw new Error(`items の読み取りに失敗: ${error.message}`)
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-16 sm:gap-16 sm:py-20">
       <header className="flex flex-col gap-2">
@@ -95,7 +103,7 @@ export default async function UserPage({ params }: { params: Promise<{ username:
       </header>
 
       <main>
-        <CardGrid items={items ?? []} />
+        <CardGrid items={items} />
       </main>
     </div>
   )

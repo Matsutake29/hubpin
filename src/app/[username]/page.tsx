@@ -87,6 +87,9 @@ export default async function UserPage({ params }: { params: Promise<{ username:
     // ポリシーを1本触るだけで再発する。dashboard 側は本人しか見ないので RLS に任せる。
     .eq('visible', true)
     .order('sort_order')
+    // 🚨 sort_order には UNIQUE が無く、同値の行の順序は保証されない（#46-8）。
+    //    id で決定的にしておかないと、並びが再生成ごとに入れ替わり、上下ボタンが別のペアを入れ替える。
+    .order('id')
 
   // 読めないまま描画すると、カード0枚のページがキャッシュされる（#61）
   if (error) throw new Error(`items の読み取りに失敗: ${error.message}`)

@@ -36,7 +36,13 @@ export function ItemForm({
       {/* 🚨 React 19 の <form action={...}> は送信が終わるとフォームをリセットする。
       エラーで戻ってきたときは、Server Action が返した値を useForm の values オプションで書き戻す。
       🚨 成功時は state が変わらず書き戻しが起きないので、action 側で redirect している */}
-      {rootError && <p className="form-error">{rootError}</p>}
+      {/* 🚨 rootError は欄のエラーではないので、react-hook-form のフォーカス移動も効かない。
+          常に置いたライブリージョンで読み上げる（後から要素ごと足すと読まれない）。
+          ⚠️ 欄ごとのエラーには付けない。mode: 'onBlur' なので、欄を離れるたびに割り込んで騒がしくなる。
+          欄のほうは aria-describedby で、フォーカスが飛んだ先で読ませる */}
+      <div aria-live="assertive" className="empty:hidden">
+        {rootError && <p className="form-error">{rootError}</p>}
+      </div>
 
       {/* 🚨 placeholder はラベルの代わりにならない。入力を始めた瞬間に消えるので、
           「何を入れる欄だったか」を確かめる手段が無くなる。
@@ -45,8 +51,20 @@ export function ItemForm({
         <label className="field-label" htmlFor="title">
           タイトル
         </label>
-        <input className="field" id="title" {...register('title')} />
-        {fieldError('title') && <p className="form-error">{fieldError('title')}</p>}
+        {/* 🚨 エラー文を aria-describedby で入力欄に結ぶ。react-hook-form はエラーの欄へ
+            フォーカスを飛ばすので、飛んだ先でエラー文が読まれないと「原因不明のまま原因の場所へ飛ばされる」 */}
+        <input
+          className="field"
+          id="title"
+          aria-invalid={!!fieldError('title')}
+          aria-describedby={fieldError('title') ? 'title-error' : undefined}
+          {...register('title')}
+        />
+        {fieldError('title') && (
+          <p id="title-error" className="form-error">
+            {fieldError('title')}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -67,16 +85,38 @@ export function ItemForm({
           URL
         </label>
         {/* placeholder は「例」なので残す。ラベルと重複する説明にはしない */}
-        <input className="field" id="url" {...register('url')} placeholder="https://..." />
-        {fieldError('url') && <p className="form-error">{fieldError('url')}</p>}
+        <input
+          className="field"
+          id="url"
+          aria-invalid={!!fieldError('url')}
+          aria-describedby={fieldError('url') ? 'url-error' : undefined}
+          {...register('url')}
+          placeholder="https://..."
+        />
+        {fieldError('url') && (
+          <p id="url-error" className="form-error">
+            {fieldError('url')}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label className="field-label" htmlFor="description">
           説明
         </label>
-        <textarea className="field" id="description" rows={4} {...register('description')} />
-        {fieldError('description') && <p className="form-error">{fieldError('description')}</p>}
+        <textarea
+          className="field"
+          id="description"
+          rows={4}
+          aria-invalid={!!fieldError('description')}
+          aria-describedby={fieldError('description') ? 'description-error' : undefined}
+          {...register('description')}
+        />
+        {fieldError('description') && (
+          <p id="description-error" className="form-error">
+            {fieldError('description')}
+          </p>
+        )}
       </div>
 
       {/* こちらは <label> で囲む暗黙の結び付け。チェックボックスは文とひと続きで読むので、

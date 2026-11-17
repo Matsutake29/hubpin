@@ -84,4 +84,12 @@ describe('ItemList', () => {
 
     expect(vi.isMockFunction(moveItem)).toBe(true)
   })
+
+  // #51-1 aria-label で今の状態を上書きしない
+  test('公開ボタンの名前が今の状態から始まる', () => {
+    render(<ItemList items={items} />)
+
+    expect(screen.getAllByRole('button', { name: /^公開（押すと非公開にする）$/ })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /^非公開（押すと公開にする）$/ })).toHaveLength(1)
+  })
 })

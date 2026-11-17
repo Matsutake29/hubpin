@@ -38,8 +38,12 @@ export function LoginForm() {
         </div>
 
         {/* 🚨 エラーはボタンより前に出す。押した結果が押した場所の下に出ると、
-            画面の下端で入力しているときに視界の外へ落ちて「何も起きなかった」に見える */}
-        {state?.message && <p className="form-error">{state.message}</p>}
+            画面の下端で入力しているときに視界の外へ落ちて「何も起きなかった」に見える
+            🚨 ライブリージョンは常に置いておき、中身だけ差し替える。要素ごと後から足すと、
+            フォーカスは送信ボタンに残ったままなので読み上げが起きない（WCAG 4.1.3） */}
+        <div aria-live="assertive" className="empty:hidden">
+          {state?.message && <p className="form-error">{state.message}</p>}
+        </div>
 
         <button className="btn-primary" type="submit">
           ログイン
@@ -49,7 +53,9 @@ export function LoginForm() {
       {/* 罫で切る。本人のログインとデモは別の行為で、押し間違える場所ではない。
           ⚠️ デモは採用担当が最初に触る導線なので、隠さず同じ強さの近くに置く */}
       <div className="flex flex-col gap-3 border-t border-line pt-8">
-        {demoState?.message && <p className="form-error">{demoState.message}</p>}
+        <div aria-live="assertive" className="empty:hidden">
+          {demoState?.message && <p className="form-error">{demoState.message}</p>}
+        </div>
         <form action={demoFormAction}>
           {/* 一覧の「公開/非公開」バッジと同じ枠線ボタン。主導線（bg-main）より一段弱い */}
           <button

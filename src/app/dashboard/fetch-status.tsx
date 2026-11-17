@@ -46,7 +46,12 @@ export function FetchStatus({ sources }: { sources: Source[] }) {
 
             {/* 🚨 色だけで状態を伝えない（WCAG 1.4.1）。赤が見えない人にも
                 「失敗」という語で伝わるようにする。色は補助でしかない */}
-            {source.last_status === 'failure' ? (
+            {/* 🚨 null（まだ一度も取得していない）を成功に寄せない。この画面は
+                「失敗しても誰も見ていない」を補うためのもので、動いていないものを
+                成功と出すのは目的と逆向き。日付側の「未取得」と揃える */}
+            {source.last_status === null ? (
+              <span className="shrink-0 text-xs text-muted">未取得</span>
+            ) : source.last_status === 'failure' ? (
               <span className="shrink-0 text-xs font-bold text-danger">失敗</span>
             ) : (
               <span className="shrink-0 text-xs text-muted">成功</span>

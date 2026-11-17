@@ -38,5 +38,9 @@ async function fetchRaw(source: FeedSource): Promise<NormalizedEntry[]> {
 }
 
 export async function fetchEntries(source: FeedSource): Promise<NormalizedEntry[]> {
-  return sortAndTake(await fetchRaw(source), source.max_entries)
+  // 🚨 url が空のエントリーは捨てる。残すと `<a href="">`（押すと同じページに戻る）になり、
+  //    しかも max_entries の枠を1つ食って正常な記事を押し出す。
+  //    ⭐ 全媒体がここを通るので、アダプター3つに書かずに済む（並べ替えをここに置くのと同じ理由）。
+  const entries = (await fetchRaw(source)).filter((entry) => entry.url !== '')
+  return sortAndTake(entries, source.max_entries)
 }

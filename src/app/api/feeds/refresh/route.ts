@@ -5,6 +5,10 @@ import { revalidatePublicPage } from '@/lib/revalidate'
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
+// 🚨 fetch 1回のタイムアウト（10秒）× ソース数で収まる上限を明示する。
+//    プラットフォームの既定で打ち切られると catch が走らず、失敗の記録が残らない。
+export const maxDuration = 60
+
 // 🚨 export しない。route handler のファイルで export してよいのは HTTP メソッド名（GET / POST …）と
 //    dynamic などのルート設定だけ。それ以外を export するとビルドが落ちる。
 //    ⭐ actions.ts の prepareItem と「export しない」理由が違うことに注意（あちらは Server Action 化を避けるため）。
@@ -96,10 +100,14 @@ export async function GET(request: Request) {
     } catch (e) {
       // 📌 成功時の last_status は関数の中で書いている（delete / insert と同じトランザクションに
       //    入れるため）。失敗したときは関数を呼べないので、failure はここで書くしかない。
-      await supabase
+      // 🚨 ここの失敗を見ないと、取得は失敗しているのに last_status が前回の 'success' のまま残る。
+      //    失敗を記録するための処理なので、壊れたときにいちばん影響が出る。throw はしない（ログと揃える）。
+      const { error: statusError } = await supabase
         .from('feed_sources')
         .update({ last_fetched_at: new Date().toISOString(), last_status: 'failure' })
         .eq('id', source.id)
+
+      if (statusError) console.error('feed_sources の失敗の記録に失敗:', statusError.message)
 
       await writeFetchLog(supabase, {
         sourceId: source.id,

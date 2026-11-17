@@ -78,3 +78,30 @@ describe('sortAndTake', () => {
     expect(input.map((e) => e.title)).toEqual(['古', '新'])
   })
 })
+
+describe('parseRss の型変換（#47）', () => {
+  test('数字だけのタイトルを文字列のまま返す', () => {
+    const xml =
+      '<rss><channel><item><title>2026</title><link>https://example.com/</link></item></channel></rss>'
+    expect(parseRss(xml)[0].title).toBe('2026')
+  })
+
+  // 文字列のまま渡れば Invalid Date → null（「日付不明」）。number で渡ると 1970年の日付になる。
+  test('数字だけの pubDate を 1970年の日付にしない', () => {
+    const xml =
+      '<rss><channel><item><title>a</title><link>https://example.com/</link><pubDate>20260819</pubDate></item></channel></rss>'
+    expect(parseRss(xml)[0].published_at).toBe(null)
+  })
+
+  test('属性付きのタイトルから本文を取り出す', () => {
+    const xml =
+      '<rss><channel><item><title type="html">Hi</title><link>https://example.com/</link></item></channel></rss>'
+    expect(parseRss(xml)[0].title).toBe('Hi')
+  })
+
+  test('&amp; を最後に戻す（二重に復号しない）', () => {
+    const xml =
+      '<rss><channel><item><title>A &amp;amp;lt; B</title><link>https://example.com/</link></item></channel></rss>'
+    expect(parseRss(xml)[0].title).toBe('A &lt; B')
+  })
+})

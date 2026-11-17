@@ -5,6 +5,15 @@ on:
   push:
     branches: [main]
 
+# チェックアウトしてビルドするだけなので読み取りで足りる。
+# 後で権限の要る処理を足すとき、ここを意識して足す形にしておく。
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,10 +24,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # 🚨 前のステップが落ちても後ろを全部走らせる。既定だと整形忘れ1つでテストが一度も走らず、
+      #    「赤い＝壊れている」のか「赤い＝整形忘れ」なのかがログを開くまで分からない。
+      #    ⚠️ ジョブは分けない。README の「build を必須チェックに」がジョブ名を見ているので、
+      #       名前を変えると branch protection が静かに素通りする。
       - run: npm run lint
-      - run: npm run format:check
-      - run: npm run test:run
-      - run: npm run build
+      - if: ${{ !cancelled() }}
+        run: npm run format:check
+      - if: ${{ !cancelled() }}
+        run: npm run test:run
+      - if: ${{ !cancelled() }}
+        run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}

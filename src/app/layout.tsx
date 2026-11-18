@@ -34,6 +34,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="ja"
       className={`${zenKakuGothicNew.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      // ブラウザ拡張（翻訳・ダークモード系など）が <html> に属性を足すと、ハイドレーションの警告が出る。
+      // それを黙らせるため（8995567）。🚨 効くのは <html> の属性だけで、子孫の不一致は今までどおり警告される（#52-6）
       suppressHydrationWarning
     >
       <body className="board min-h-full flex flex-col">{children}</body>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/utils/supabase/service'
 import { fetchEntries } from '@/lib/feed'
 import { revalidatePublicPage } from '@/lib/revalidate'
+import { cronSecret as readCronSecret } from '@/lib/env.server'
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
   //    ⚠️ この判定が無いと、未設定のとき cronSecret が undefined になり、
   //       `Bearer undefined` を送れば誰でも通る入口ができる。
   const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
+  const cronSecret = readCronSecret()
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
@@ -98,6 +99,9 @@ export async function GET(request: Request) {
       updatedUserIds.add(source.user_id)
       results.push({ provider: source.provider, saved: saved ?? 0 })
     } catch (e) {
+      // 🚨 String(e) にしない。Error に対しては "Error: …" と接頭辞が付き、
+      //    fetch_logs.error_message だけ形が揃わなくなる（#53）
+      const message = e instanceof Error ? e.message : String(e)
       // 📌 成功時の last_status は関数の中で書いている（delete / insert と同じトランザクションに
       //    入れるため）。失敗したときは関数を呼べないので、failure はここで書くしかない。
       // 🚨 ここの失敗を見ないと、取得は失敗しているのに last_status が前回の 'success' のまま残る。
@@ -112,10 +116,10 @@ export async function GET(request: Request) {
       await writeFetchLog(supabase, {
         sourceId: source.id,
         status: 'failure',
-        errorMessage: String(e),
+        errorMessage: message,
       })
 
-      results.push({ provider: source.provider, error: String(e) })
+      results.push({ provider: source.provider, error: message })
     }
   }
 

@@ -249,4 +249,20 @@ body {
   .btn-quiet:hover {
     color: var(--c-text);
   }
+
+  /* 二次ボタン（公開/非公開のバッジ・デモログイン）。主導線（btn-primary）より一段弱い。
+     🚨 枠は line-strong。押せる部品の境界なので 3:1 が要る（--c-line は 1.26:1）。
+     ⭐ 以前は2か所にベタ書きで、PR #35 で片方（デモログイン）だけ取り残された（#53-14）。
+     形（角丸・余白）は使う側で変わるので、ここは枠と色の振る舞いだけを持つ */
+  .btn-outline {
+    border: 1px solid var(--c-line-strong);
+    transition:
+      border-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--c-main);
+    color: var(--c-main);
+  }
 }

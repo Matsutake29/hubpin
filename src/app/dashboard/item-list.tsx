@@ -117,7 +117,7 @@ export function ItemList({ items }: { items: Item[] }) {
             <form action={toggleVisible.bind(null, item.id, item.visible)} className="shrink-0">
               <button
                 type="submit"
-                className="flex items-center gap-1.5 rounded-full border border-line-strong px-2.5 py-1 text-xs text-muted transition-colors hover:border-main hover:text-main"
+                className="btn-outline flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted"
               >
                 <span
                   aria-hidden="true"

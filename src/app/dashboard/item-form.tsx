@@ -15,7 +15,7 @@ export function ItemForm({
   const [state, formAction, isPending] = useActionState(action, undefined)
   const { register, formState } = useForm<ItemInput>({
     errors: state?.errors,
-    values: (state?.values as ItemInput | undefined) ?? defaultItem,
+    values: state?.values ?? defaultItem,
     mode: 'onBlur',
     resolver: zodResolver(itemSchema),
   })

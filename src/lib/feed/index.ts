@@ -3,6 +3,7 @@ import type { Database } from '@/types/database.types'
 import { fetchWordPress } from './wordpress'
 import { fetchZenn } from './zenn'
 import { fetchGitHub } from './github'
+import { byPublishedDesc } from './order'
 
 // 取得に必要な列だけを DB の型から取り出す。
 // 🚨 独自に型を書き直さない。列名や型が変わったら、ここで tsc が落ちてほしい。
@@ -15,9 +16,7 @@ type FeedSource = Pick<
 //    ⚠️ 媒体ごとに書くと、書き忘れても型は通る。しかも Zenn は新しい順で返るので
 //       画面を見ても気づけない（壊れるのは WP のフォールバック経路だけ）。
 export function sortAndTake(entries: NormalizedEntry[], max: number): NormalizedEntry[] {
-  return [...entries]
-    .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''))
-    .slice(0, max)
+  return [...entries].sort(byPublishedDesc).slice(0, max)
 }
 
 async function fetchRaw(source: FeedSource): Promise<NormalizedEntry[]> {

@@ -86,6 +86,14 @@ describe('ItemList', () => {
     expect(vi.isMockFunction(moveItem)).toBe(true)
   })
 
+  // #51-1 aria-label で今の状態を上書きしない
+  test('公開ボタンの名前が今の状態から始まる', () => {
+    render(<ItemList items={items} />)
+
+    expect(screen.getAllByRole('button', { name: /^公開（押すと非公開にする）$/ })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /^非公開（押すと公開にする）$/ })).toHaveLength(1)
+  })
+
   // 🚨 死守ライン2。aria-disabled だけ固定しても、動く向きを取り違えたら意味が無い（#49）。
   test('「上へ移動」は moveItem(id, up) を呼ぶ', () => {
     render(<ItemList items={items} />)

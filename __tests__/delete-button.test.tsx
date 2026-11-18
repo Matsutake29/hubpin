@@ -30,6 +30,23 @@ describe('DeleteButton', () => {
     expect(screen.queryByText('削除する')).toBeNull()
   })
 
+  // #51-4 押したボタンが置き換わってもフォーカスを body に落とさない
+  test('確認に入ると「やめる」に、戻ると「削除」にフォーカスが移る', () => {
+    render(<DeleteButton action={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('削除'))
+    expect(document.activeElement).toBe(screen.getByText('やめる'))
+
+    fireEvent.click(screen.getByText('やめる'))
+    expect(document.activeElement).toBe(screen.getByText('削除'))
+  })
+
+  test('最初の表示ではフォーカスを動かさない', () => {
+    render(<DeleteButton action={vi.fn()} />)
+
+    expect(document.activeElement).toBe(document.body)
+  })
+
   test('「削除する」で action が呼ばれる', () => {
     const action = vi.fn()
     render(<DeleteButton action={action} />)

@@ -102,15 +102,17 @@ export function ItemList({ items }: { items: Item[] }) {
           <span className="shrink-0 font-mono text-xs text-muted">{item.type}</span>
 
           {/* 🚨 見えている語は「今の状態」で、押した先の状態ではない。
-              押すと何になるかは aria-label でだけ言う（読み上げは動作を求めるため）。
               文字を「非公開にする」にすると、今どちらなのかが読めなくなる。
+              🚨 aria-label で動作を言わない。aria-label は中の文字を上書きするので、
+              読み上げでは全行が「非公開にする」になり、どれが公開中か分からなくなる。
+              音声操作で画面の語（「非公開」）を言っても押せない（WCAG 2.5.3）。
+              ⭐ 見えている語を名前の先頭に残し、押した先は sr-only で後ろに足す。
               🚨 枠は border-line ではない。押すと公開状態が変わるボタンなので
               「操作できる部品の境界」として 3:1 が要る（--c-border は 1.26:1）。
               ⭐ すぐ外の <li> の枠は行の区切り＝装飾なので border-line のまま */}
           <form action={toggleVisible.bind(null, item.id, item.visible)} className="shrink-0">
             <button
               type="submit"
-              aria-label={item.visible ? '非公開にする' : '公開する'}
               className="flex items-center gap-1.5 rounded-full border border-line-strong px-2.5 py-1 text-xs text-muted transition-colors hover:border-main hover:text-main"
             >
               <span
@@ -118,6 +120,7 @@ export function ItemList({ items }: { items: Item[] }) {
                 className={`h-1.5 w-1.5 rounded-full ${item.visible ? 'bg-main' : 'bg-muted'}`}
               />
               {item.visible ? '公開' : '非公開'}
+              <span className="sr-only">（押すと{item.visible ? '非公開' : '公開'}にする）</span>
             </button>
           </form>
 

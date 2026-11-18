@@ -1,6 +1,8 @@
 import type { NormalizedEntry } from './types'
 import { toIsoOrNull } from './date'
 import { parseRss } from './rss'
+import { decodeEntities } from './entities'
+import { feedFetchSignal, withParams } from './http'
 
 type WpPost = {
   title?: { rendered?: string }
@@ -16,15 +18,26 @@ export async function fetchWordPress(
   fallback: string | null,
   max: number,
 ): Promise<NormalizedEntry[]> {
-  const url = `${endpoint}?per_page=${max}&_embed=wp:featuredmedia&_fields=title,link,date_gmt,_links,_embedded`
-  const res = await fetch(url)
+  const url = withParams(endpoint, {
+    per_page: String(max),
+    _embed: 'wp:featuredmedia',
+    _fields: 'title,link,date_gmt,_links,_embedded',
+  })
+  const res = await fetch(url, { signal: feedFetchSignal() })
 
   let entries: NormalizedEntry[]
 
   if (res.ok) {
-    const posts: WpPost[] = await res.json()
+    // 🚨 res.json() は any。型注釈は検査ではないので unknown で受けて配列か確かめる。
+    //    確かめないと、オブジェクトが返ったとき `posts.map is not a function` という
+    //    原因から遠いエラーが fetch_logs に残る。
+    const json: unknown = await res.json()
+    if (!Array.isArray(json)) {
+      throw new Error('WP REST が配列を返さなかった')
+    }
+    const posts: WpPost[] = json
     entries = posts.map((post: WpPost) => ({
-      title: post.title?.rendered ?? '',
+      title: decodeEntities(post.title?.rendered ?? ''),
       url: post.link ?? '',
       // 🚨 date_gmt は UTC の値なのに Z が付かない。足さないと実行環境の TZ で解釈され、
       //    ローカル（JST）では正しく本番（UTC）でだけ9時間ずれる。
@@ -38,7 +51,7 @@ export async function fetchWordPress(
       throw new Error(`WP REST が ${res.status} で、フォールバック先も無い`)
     }
 
-    const fallbackRes = await fetch(fallback)
+    const fallbackRes = await fetch(fallback, { signal: feedFetchSignal() })
     // 🚨 ok を見ないと、404 の HTML をパースして空配列になる。
     //    空配列は「取得成功・0件」として保存側に渡り、既存のエントリーを全部消す。
     if (!fallbackRes.ok) {

@@ -48,8 +48,9 @@ export function ItemForm({
           「何を入れる欄だったか」を確かめる手段が無くなる。
           id と htmlFor で結ぶと、ラベルを押しても入力欄にフォーカスが移る */}
       <div className="flex flex-col gap-1.5">
+        {/* 必須は送信して初めて分かるのではなく、先に書いておく（#51-11） */}
         <label className="field-label" htmlFor="title">
-          タイトル
+          タイトル<span className="text-muted">（必須）</span>
         </label>
         {/* 🚨 エラー文を aria-describedby で入力欄に結ぶ。react-hook-form はエラーの欄へ
             フォーカスを飛ばすので、飛んだ先でエラー文が読まれないと「原因不明のまま原因の場所へ飛ばされる」 */}
@@ -126,7 +127,17 @@ export function ItemForm({
         公開する
       </label>
 
-      <button className="btn-primary w-fit" type="submit" disabled={isPending}>
+      {/* 🚨 disabled ではなく aria-disabled。disabled にすると押した瞬間にフォーカスが消える
+          （item-list の上下ボタンと同じ理由・#51-5）。aria-disabled は送信を止めないので、
+          送信中の2回目の押下は onClick で止める */}
+      <button
+        className="btn-primary w-fit"
+        type="submit"
+        aria-disabled={isPending}
+        onClick={(e) => {
+          if (isPending) e.preventDefault()
+        }}
+      >
         保存
       </button>
     </form>

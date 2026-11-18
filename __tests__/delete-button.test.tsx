@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { DeleteButton } from '@/app/dashboard/delete-button'
+import { AnnouncerProvider } from '@/app/dashboard/announcer'
 
 describe('DeleteButton', () => {
   test('最初は「削除」だけが出ている', () => {
@@ -64,5 +65,19 @@ describe('DeleteButton', () => {
     fireEvent.click(screen.getByText('削除'))
 
     expect(action).not.toHaveBeenCalled()
+  })
+
+  // #51-10 消した行と一緒にメッセージが消えないよう、一覧の外のライブリージョンに書く
+  test('削除すると、外側のライブリージョンに結果が出る', async () => {
+    render(
+      <AnnouncerProvider>
+        <DeleteButton action={vi.fn().mockResolvedValue(undefined)} label="あ" />
+      </AnnouncerProvider>,
+    )
+
+    fireEvent.click(screen.getByText('削除', { exact: false }))
+    fireEvent.click(screen.getByText('削除する', { exact: false }))
+
+    expect(await screen.findByText('「あ」を削除しました')).toBeTruthy()
   })
 })

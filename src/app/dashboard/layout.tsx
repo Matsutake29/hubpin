@@ -38,6 +38,8 @@ export default async function DashboardLayout({ children }: LayoutProps<'/dashbo
               <span aria-hidden="true" className="ml-1 text-xs">
                 ↗
               </span>
+              {/* ↗ は読み上げから隠しているので、別タブで開くことは語で伝える（#51-9） */}
+              <span className="sr-only">（新しいタブで開く）</span>
             </Link>
           )}
           <form action={logout}>

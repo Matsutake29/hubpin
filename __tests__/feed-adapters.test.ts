@@ -63,17 +63,13 @@ describe('fetchWordPress', () => {
   })
 
   test('REST が 500 で fallback が null なら throw する', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-      }),
-    )
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 })
+    vi.stubGlobal('fetch', fetchMock)
 
     await expect(
       fetchWordPress('https://example.com/wp-json/wp/v2/posts', null, 3),
     ).rejects.toThrow('フォールバック先も無い')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   test('REST が 500・フォールバックも 404 なら throw する', async () => {
@@ -188,6 +184,16 @@ describe('fetchGitHub', () => {
     )
   })
 
+  // 🚨 件数はここで切る。出口の sortAndTake では直せない（届かなかったリポジトリは並べようがない）。
+  test('URL に per_page=max が入る', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [ghRepo] })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchGitHub('https://api.github.com/users/example/repos', 5)
+
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('per_page=5'), expect.anything())
+  })
+
   test('User-Agent: hubpin を送る', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -208,8 +214,10 @@ describe('fetchGitHub', () => {
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({ ok: false, status: 403 })
-        .mockResolvedValueOnce({ ok: false, status: 429 }),
+        // 🚨 json を持たせる。無いと ok の判定を消しても「res.json is not a function」で赤くなり、
+        //    赤い理由が「throw しなくなった」にならない（#49）。
+        .mockResolvedValueOnce({ ok: false, status: 403, json: async () => [] })
+        .mockResolvedValueOnce({ ok: false, status: 429, json: async () => [] }),
     )
 
     const endpoint = 'https://api.github.com/users/example/repos'

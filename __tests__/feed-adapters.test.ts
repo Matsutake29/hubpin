@@ -63,17 +63,13 @@ describe('fetchWordPress', () => {
   })
 
   test('REST が 500 で fallback が null なら throw する', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-      }),
-    )
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 })
+    vi.stubGlobal('fetch', fetchMock)
 
     await expect(
       fetchWordPress('https://example.com/wp-json/wp/v2/posts', null, 3),
     ).rejects.toThrow('フォールバック先も無い')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   test('REST が 500・フォールバックも 404 なら throw する', async () => {
@@ -188,6 +184,16 @@ describe('fetchGitHub', () => {
     )
   })
 
+  // 🚨 件数はここで切る。出口の sortAndTake では直せない（届かなかったリポジトリは並べようがない）。
+  test('URL に per_page=max が入る', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [ghRepo] })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchGitHub('https://api.github.com/users/example/repos', 5)
+
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('per_page=5'), expect.anything())
+  })
+
   test('User-Agent: hubpin を送る', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -197,9 +203,10 @@ describe('fetchGitHub', () => {
 
     await fetchGitHub('https://api.github.com/users/example/repos', 3)
 
-    expect(fetchMock).toHaveBeenCalledWith(expect.any(String), {
-      headers: { 'User-Agent': 'hubpin' },
-    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: { 'User-Agent': 'hubpin' } }),
+    )
   })
 
   test('403 / 429 なら throw する', async () => {
@@ -207,8 +214,10 @@ describe('fetchGitHub', () => {
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({ ok: false, status: 403 })
-        .mockResolvedValueOnce({ ok: false, status: 429 }),
+        // 🚨 json を持たせる。無いと ok の判定を消しても「res.json is not a function」で赤くなり、
+        //    赤い理由が「throw しなくなった」にならない（#49）。
+        .mockResolvedValueOnce({ ok: false, status: 403, json: async () => [] })
+        .mockResolvedValueOnce({ ok: false, status: 429, json: async () => [] }),
     )
 
     const endpoint = 'https://api.github.com/users/example/repos'
@@ -289,6 +298,97 @@ describe('fetchEntries', () => {
     })
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/wp-json/wp/v2/posts'))
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/wp-json/wp/v2/posts'),
+      expect.anything(),
+    )
+  })
+})
+
+// #47 フィード取得の異常系
+describe('異常系（#47）', () => {
+  test('どの媒体の fetch にもタイムアウトの signal が付く', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [wpPost],
+      text: async () => '<rss><channel></channel></rss>',
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchWordPress('https://example.com/wp-json/wp/v2/posts', null, 3)
+    await fetchZenn('https://zenn.dev/example/feed')
+    await fetchGitHub('https://api.github.com/users/example/repos', 3)
+
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(init?.signal).toBeInstanceOf(AbortSignal)
+    }
+  })
+
+  test('endpoint にクエリがあっても URL が壊れない', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [wpPost] })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchWordPress('https://example.com/wp-json/wp/v2/posts?categories=3', null, 3)
+
+    const url = new URL(fetchMock.mock.calls[0][0])
+    expect(url.searchParams.get('categories')).toBe('3')
+    expect(url.searchParams.get('per_page')).toBe('3')
+  })
+
+  test('WP REST が配列以外を返したら原因の分かるメッセージで throw する', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ code: 'rest_no_route' }) }),
+    )
+
+    await expect(
+      fetchWordPress('https://example.com/wp-json/wp/v2/posts', null, 3),
+    ).rejects.toThrow('配列を返さなかった')
+  })
+
+  test('GitHub API が配列以外を返したら throw する', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ message: 'Not Found' }) }),
+    )
+
+    await expect(fetchGitHub('https://api.github.com/users/example/repos', 3)).rejects.toThrow(
+      '配列を返さなかった',
+    )
+  })
+
+  test('WP のタイトルの HTML エンティティを復号する', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ ...wpPost, title: { rendered: 'A &amp; B &#8211; &lt;C&gt;' } }],
+      }),
+    )
+
+    const entries = await fetchWordPress('https://example.com/wp-json/wp/v2/posts', null, 3)
+
+    expect(entries[0].title).toBe('A & B – <C>')
+  })
+
+  test('url が空のエントリーは捨てる（枠を食わない）', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ ...wpPost, link: undefined }, wpPost],
+      }),
+    )
+
+    const entries = await fetchEntries({
+      provider: 'wordpress',
+      endpoint_url: 'https://example.com/wp-json/wp/v2/posts',
+      fallback_url: null,
+      max_entries: 1,
+    })
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0].url).toBe('https://example.com/post')
   })
 })

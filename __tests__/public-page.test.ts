@@ -16,7 +16,11 @@ vi.mock('@/utils/supabase/public', () => ({
     from: (table: string) =>
       table === 'profiles'
         ? { select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingle }) }) }
-        : { select: () => ({ eq: () => ({ eq: () => ({ order: mocks.order }) }) }) },
+        : {
+            select: () => ({
+              eq: () => ({ eq: () => ({ order: () => ({ order: mocks.order }) }) }),
+            }),
+          },
   }),
 }))
 

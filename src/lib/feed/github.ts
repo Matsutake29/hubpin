@@ -1,10 +1,12 @@
 import type { NormalizedEntry } from './types'
 import { toIsoOrNull } from './date'
+import { feedFetchSignal, withParams } from './http'
 
 type GhRepo = {
   name?: string
   html_url?: string
-  pushed_at?: string
+  // 空のリポジトリでは null が来る（API の実際の値）。型に書いておけば tsc が覚えてくれる。
+  pushed_at?: string | null
 }
 
 export async function fetchGitHub(endpoint: string, max: number): Promise<NormalizedEntry[]> {
@@ -14,11 +16,14 @@ export async function fetchGitHub(endpoint: string, max: number): Promise<Normal
   //    ⚠️ per_page でここが切るので、並べ替えのキーが published_at と違うと
   //       「取ってくる集合」自体がずれる。出口の sortAndTake では直せない
   //       —— 届かなかったリポジトリは並べようがない。
-  const url = `${endpoint}?sort=pushed&per_page=${max}`
+  const url = withParams(endpoint, { sort: 'pushed', per_page: String(max) })
 
   // 🚨 User-Agent が空だと 403 を返す（GitHub の明示的な要件）。
   //    fetch の既定値 "node" でも通ってしまうが、名乗るほうを選ぶ。
-  const res = await fetch(url, { headers: { 'User-Agent': 'hubpin' } })
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'hubpin' },
+    signal: feedFetchSignal(),
+  })
 
   // 🚨 未認証は 60 req/h、しかも送信元 IP 単位で数えられる。Vercel の Functions は
   //    共有 IP から出るので、自分が叩いていなくても 403 / 429 が返りうる。
@@ -27,12 +32,16 @@ export async function fetchGitHub(endpoint: string, max: number): Promise<Normal
     throw new Error(`GitHub API が ${res.status}`)
   }
 
-  const repos: GhRepo[] = await res.json()
+  const json: unknown = await res.json()
+  if (!Array.isArray(json)) {
+    throw new Error('GitHub API が配列を返さなかった')
+  }
+  const repos: GhRepo[] = json
 
   return repos.map((repo) => ({
     title: repo.name ?? '',
     url: repo.html_url ?? '',
-    // ⚠️ pushed_at は空のリポジトリで null になりうる。toIsoOrNull が null に落とす。
+    // pushed_at が null なら toIsoOrNull が null に落とす。
     published_at: toIsoOrNull(repo.pushed_at),
     // GitHub にサムネイルに当たるものは無い。
     thumbnail_url: null,

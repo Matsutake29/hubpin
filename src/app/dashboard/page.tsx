@@ -13,6 +13,9 @@ export default async function DashboardPage() {
     .from('items')
     .select('id, title, type, visible, sort_order')
     .order('sort_order')
+    // 🚨 sort_order には UNIQUE が無く、同値の行の順序は保証されない（#46-8）。
+    //    id で決定的にしておかないと、並びが再生成ごとに入れ替わり、上下ボタンが別のペアを入れ替える。
+    .order('id')
 
   // 🚨 ここでも .eq('user_id', ...) は書かない。items と同じ理由で、RLS の
   //    「users can view own feed sources」（auth.uid() = user_id）が絞る。

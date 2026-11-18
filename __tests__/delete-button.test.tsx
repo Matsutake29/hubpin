@@ -46,4 +46,23 @@ describe('DeleteButton', () => {
 
     expect(document.activeElement).toBe(document.body)
   })
+
+  test('「削除する」で action が呼ばれる', () => {
+    const action = vi.fn()
+    render(<DeleteButton action={action} />)
+
+    fireEvent.click(screen.getByText('削除'))
+    fireEvent.click(screen.getByText('削除する'))
+
+    expect(action).toHaveBeenCalledTimes(1)
+  })
+
+  test('「削除」を押しただけでは action は呼ばれない', () => {
+    const action = vi.fn()
+    render(<DeleteButton action={action} />)
+
+    fireEvent.click(screen.getByText('削除'))
+
+    expect(action).not.toHaveBeenCalled()
+  })
 })

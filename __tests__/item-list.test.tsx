@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { ItemList } from '@/app/dashboard/item-list'
+import { moveItem } from '@/app/dashboard/actions'
 
 // 🚨 actions.ts は Supabase クライアント経由で next/headers まで届く。
 //    next/headers はリクエストの中でしか動かないので、importした時点でテストが起動できない。
@@ -91,5 +92,24 @@ describe('ItemList', () => {
 
     expect(screen.getAllByRole('button', { name: /^公開（押すと非公開にする）$/ })).toHaveLength(2)
     expect(screen.getAllByRole('button', { name: /^非公開（押すと公開にする）$/ })).toHaveLength(1)
+  })
+
+  // 🚨 死守ライン2。aria-disabled だけ固定しても、動く向きを取り違えたら意味が無い（#49）。
+  test('「上へ移動」は moveItem(id, up) を呼ぶ', () => {
+    render(<ItemList items={items} />)
+
+    fireEvent.click(screen.getAllByRole('button', { name: '上へ移動' })[1])
+
+    expect(moveItem).toHaveBeenCalledTimes(1)
+    expect(moveItem).toHaveBeenCalledWith('2', 'up', expect.anything())
+  })
+
+  test('「下へ移動」は moveItem(id, down) を呼ぶ', () => {
+    render(<ItemList items={items} />)
+
+    fireEvent.click(screen.getAllByRole('button', { name: '下へ移動' })[1])
+
+    expect(moveItem).toHaveBeenCalledTimes(1)
+    expect(moveItem).toHaveBeenCalledWith('2', 'down', expect.anything())
   })
 })

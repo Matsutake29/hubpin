@@ -12,6 +12,15 @@ export async function generateStaticParams() {
   return data.map((p) => ({ username: p.username }))
 }
 
+// 🚨 generateStaticParams に無い username は 404 にする（#52）。既定（true）のままだと、
+//    /wp-login.php や /.env のようなボットの巡回が全部このページに来て、
+//    そのたびに関数が起動し profiles を1回引いていた。静的サイトなら 0 コストで返せる 404。
+//    ⚠️ 代わりに、ユーザーを足したら再デプロイするまで公開されない。
+//       v1 はサインアップが無く手で作るので、足すときに再デプロイすればよい。
+export const dynamicParams = false
+
+// ⭐ 再生成の本経路は on-demand（ダッシュボードの編集と Cron の取得成功 → revalidatePublicPage）。
+//    この 3600 は、on-demand の再検証が落ちたときの受け皿。
 export const revalidate = 3600
 
 // generateMetadata と UserPage の両方から呼ぶので、1リクエスト内で1回に畳む。
@@ -77,7 +86,7 @@ export default async function UserPage({ params }: { params: Promise<{ username:
     .select(
       `
       id, type, title, description, url, sort_order,
-      feed_sources ( max_entries, last_fetched_at,
+      feed_sources (
       feed_entries ( id, title, url, published_at, thumbnail_url ) )
     `,
     )
@@ -87,6 +96,9 @@ export default async function UserPage({ params }: { params: Promise<{ username:
     // ポリシーを1本触るだけで再発する。dashboard 側は本人しか見ないので RLS に任せる。
     .eq('visible', true)
     .order('sort_order')
+    // 🚨 sort_order には UNIQUE が無く、同値の行の順序は保証されない（#46-8）。
+    //    id で決定的にしておかないと、並びが再生成ごとに入れ替わり、上下ボタンが別のペアを入れ替える。
+    .order('id')
 
   // 読めないまま描画すると、カード0枚のページがキャッシュされる（#61）
   if (error) throw new Error(`items の読み取りに失敗: ${error.message}`)

@@ -6,9 +6,10 @@ export type Item = Pick<
   Database['public']['Tables']['items']['Row'],
   'id' | 'type' | 'title' | 'description' | 'url' | 'sort_order'
 > & {
+  // 🚨 公開ページで使わない列は持たない（#52）。Client Component に渡した値は
+  //    RSC ペイロードとして HTML に埋め込まれ、誰でも読める。
+  //    last_fetched_at は「本人だけが見る」とした運用情報（fetch-status.tsx）。
   feed_sources: {
-    max_entries: number
-    last_fetched_at: string | null
     feed_entries: Pick<
       Database['public']['Tables']['feed_entries']['Row'],
       'id' | 'title' | 'url' | 'published_at' | 'thumbnail_url'

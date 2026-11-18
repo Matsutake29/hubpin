@@ -14,5 +14,8 @@ export default defineConfig({
     // DOM をテストするので node ではなく jsdom
     environment: 'jsdom',
     setupFiles: ['./vitest-setup.ts'],
+    // 🚨 モジュールの先頭で作った vi.fn() は、テストを跨いで呼び出し履歴が残る。
+    //    「呼ばれた」を確かめるテストが、前のテストの呼び出しで緑になるのを防ぐ。
+    clearMocks: true,
   },
 })

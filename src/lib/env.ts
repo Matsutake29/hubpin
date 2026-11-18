@@ -9,14 +9,7 @@
 // ⚠️ 同じ2つの値を4ファイル（client / server / public / proxy）が
 //    それぞれ読んでいた。読む場所を1つにするのがこのファイルの目的でもある。
 
-function required(name: string, value: string | undefined): string {
-  if (!value) {
-    throw new Error(
-      `環境変数 ${name} が設定されていません。.env.local を確認してください（キー名は .env.example にあります）`,
-    )
-  }
-  return value
-}
+import { required } from './env-required'
 
 // 🚨 NEXT_PUBLIC_ の値は「process.env.NEXT_PUBLIC_XXX」と書かれたとおりの形でしか
 //    ビルド時に置換されない。process.env[name] のような動的アクセスにすると置換されず、

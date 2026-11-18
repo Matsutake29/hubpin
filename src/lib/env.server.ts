@@ -5,12 +5,7 @@
 //    読まれる。デモの認証情報を同じファイルに置くと、import の経路しだいで
 //    クライアント側のバンドルに名前が載りうる。ファイルごと分けて、名前で意図を示す。
 
-function required(name: string, value: string | undefined): string {
-  if (!value) {
-    throw new Error(`環境変数 ${name} が設定されていません。.env.local を確認してください`)
-  }
-  return value
-}
+import { required } from './env-required'
 
 // 🚨 以下はどれも、モジュールの読み込み時ではなく「呼ばれたとき」に検証する。
 //    モジュールレベルで検証すると、値を渡していない環境（CI の build）でそこが落ちる。
@@ -29,4 +24,11 @@ export function demoCredentials() {
     email: required('DEMO_EMAIL', process.env.DEMO_EMAIL),
     password: required('DEMO_PASSWORD', process.env.DEMO_PASSWORD),
   }
+}
+
+// 🚨 Cron の入口（api/feeds/refresh）の合言葉。required() に通さない（#53-5）。
+//    未設定のときに throw するのではなく「全部 401」が正しい挙動なので、
+//    undefined のまま返し、判定は呼ぶ側（!cronSecret を先に見る）に任せる。
+export function cronSecret(): string | undefined {
+  return process.env.CRON_SECRET
 }

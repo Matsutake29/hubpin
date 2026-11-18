@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { Database } from '@/types/database.types'
+import { ExternalMark } from '@/components/external-mark'
 
 export type Item = Pick<
   Database['public']['Tables']['items']['Row'],
@@ -39,10 +40,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                 <span aria-hidden="true" className="pin-head pin-head--fill" />
                 <a className="font-bold" href={item.url} target="_blank" rel="noopener noreferrer">
                   {item.title}
-                  <span aria-hidden="true" className="ml-1.5 text-xs font-normal text-muted">
-                    ↗
-                  </span>
-                  <span className="sr-only">（新しいタブで開く）</span>
+                  <ExternalMark />
                 </a>
                 {entries.length > 0 && (
                   <ul className="mt-1 flex flex-col gap-1.5">
@@ -77,10 +75,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                 <span aria-hidden="true" className="pin-head pin-head--fill" />
                 <span className="font-bold">
                   {item.title}
-                  <span aria-hidden="true" className="ml-1.5 text-xs font-normal text-muted">
-                    ↗
-                  </span>
-                  <span className="sr-only">（新しいタブで開く）</span>
+                  <ExternalMark />
                 </span>
                 {/* 🚨 ここだけ2行で打ち切る。link のカードは一覧の1枚で、
                     高さが揃わないとグリッドが崩れる。note / feed の展開部（下）は

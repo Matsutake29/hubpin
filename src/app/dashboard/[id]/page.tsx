@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import type { ItemInput } from '@/lib/schemas/item'
+import { itemTypeSchema } from '@/lib/schemas/item'
 import { ItemForm } from '../item-form'
 import { updateItem } from '../actions'
 
@@ -25,7 +25,8 @@ export default async function EditItemPage({ params }: { params: Promise<{ id: s
         action={updateItem.bind(null, id)}
         defaultItem={{
           ...item,
-          type: item.type as ItemInput['type'],
+          // DB の type は text。CHECK 制約で3つに絞ってあるので parse は落ちない（落ちたら DB が壊れている）
+          type: itemTypeSchema.parse(item.type),
           url: item.url ?? '',
           description: item.description ?? '',
         }}

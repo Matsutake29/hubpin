@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { logout } from '@/app/login/actions'
+import { ExternalMark } from '@/components/external-mark'
 
 // 🚨 ヘッダーは page.tsx ではなくここに置く。一覧にだけヘッダーがあり、
 //    追加・編集に入ると消えていた（戻る導線ごと無くなっていた）。
@@ -33,13 +34,14 @@ export default async function DashboardLayout({ children }: LayoutProps<'/dashbo
         <nav className="flex items-center gap-4 text-sm sm:gap-6">
           {/* 編集して公開ページで確かめる往復が続くので別タブで開く */}
           {profile && (
-            <Link className="btn-quiet" href={`/${profile.username}`} target="_blank">
+            <Link
+              className="btn-quiet"
+              href={`/${profile.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               公開ページを見る
-              <span aria-hidden="true" className="ml-1 text-xs">
-                ↗
-              </span>
-              {/* ↗ は読み上げから隠しているので、別タブで開くことは語で伝える（#51-9） */}
-              <span className="sr-only">（新しいタブで開く）</span>
+              <ExternalMark className="ml-1 text-xs" />
             </Link>
           )}
           <form action={logout}>

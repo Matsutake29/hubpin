@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ExternalMark } from '@/components/external-mark'
 
 const links = [
   {
@@ -64,10 +65,7 @@ export default function Home() {
                     <span aria-hidden="true" className="pin-head pin-head--fill" />
                     <span className="font-bold">
                       {link.title}
-                      <span aria-hidden="true" className="ml-1.5 text-xs font-normal text-muted">
-                        ↗
-                      </span>
-                      <span className="sr-only">（新しいタブで開く）</span>
+                      <ExternalMark />
                     </span>
                     <span className="text-sm leading-6 text-muted">{link.description}</span>
                   </a>

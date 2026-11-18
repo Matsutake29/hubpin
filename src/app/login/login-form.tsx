@@ -58,10 +58,7 @@ export function LoginForm() {
         </div>
         <form action={demoFormAction}>
           {/* 一覧の「公開/非公開」バッジと同じ枠線ボタン。主導線（bg-main）より一段弱い */}
-          <button
-            className="w-full rounded-(--radius) border border-line px-4 py-2 text-sm transition-colors hover:border-main hover:text-main"
-            type="submit"
-          >
+          <button className="btn-outline w-full rounded-(--radius) px-4 py-2 text-sm" type="submit">
             デモログイン
           </button>
         </form>

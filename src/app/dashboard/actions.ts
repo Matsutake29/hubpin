@@ -1,19 +1,16 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { itemSchema, type ItemInput } from '@/lib/schemas/item'
+import { itemSchema, itemTypeSchema, type ItemInput } from '@/lib/schemas/item'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { revalidatePublicPage } from '@/lib/revalidate'
 
-// フォームが送ってきた生の値。検証に失敗したとき画面へ返して入力を保つ
-type ItemValues = {
-  title: string
-  type: string
-  url: string
-  description: string
-  visible: boolean
-}
+// フォームが送ってきた値。検証に失敗したとき画面へ返して入力を保つ。
+// ⭐ 手で型を書かず、zod の型から導く（#53-8）。以前は type: string の手書きの型で、
+//    フォーム側で `as ItemInput` と黙らせていた。type=foo が来ると ItemInput を騙った値が
+//    useForm に入っていた。いまは type を検証してから返すので、キャストが要らない。
+export type ItemValues = Required<ItemInput>
 
 export type ItemState =
   | {
@@ -22,37 +19,61 @@ export type ItemState =
     }
   | undefined
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+// 🚨 supabase-js の型名 SupabaseClient と同じ名前にしない（#53）。cookie ベースのクライアントだと名前で分かるようにする。
+type CookieClient = Awaited<ReturnType<typeof createClient>>
 
 // createItem と updateItem は、ログイン確認 → 生値の組み立て → 検証 → エラー整形 まで
 // 20行が完全に同じだった。1箇所にまとめる。
 // 🚨 export しない。'use server' のファイルで export した関数は全部 Server Action になる
 //    （＝外から呼べるエンドポイントが増える）。ここは内部のヘルパーなので出さない。
+// DB に書く形。'' を null に変えるのはここ（prepareItem）1箇所だけ（#53-4）
+type ItemRow = Omit<ItemInput, 'url' | 'description'> & {
+  url: string | null
+  description: string | null
+}
+
 type PreparedItem =
-  | { ok: true; supabase: SupabaseClient; userId: string; data: ItemInput }
+  | { ok: true; supabase: CookieClient; userId: string; data: ItemRow }
   | { ok: false; state: ItemState }
 
 // ⭐ 判別可能なユニオンで返す。呼び出し側が ok を見た時点で supabase と userId が
 //    確定するので、あとで ! を書かずに済む
-async function prepareItem(formData: FormData): Promise<PreparedItem> {
+// 🚨 以下2つも export しない（Server Action にしない）。
+// ログインの確認。書き込みの経路6つが毎回同じ3行を書いていた（#53）
+async function requireAuth(): Promise<{ supabase: CookieClient; userId: string } | null> {
   const supabase = await createClient()
   const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) {
+  if (!auth) return null
+  return { supabase, userId: auth.claims.sub }
+}
+
+// items を書いたあとの再検証。ダッシュボードと公開ページの両方を捨てる。
+// ⭐ 1行にまとめておけば、片方だけ書き忘れる形が無くなる（resetDemoData で起きていた・#53-1）
+async function revalidateAfterWrite(supabase: CookieClient, userId: string) {
+  revalidatePath('/dashboard')
+  await revalidatePublicPage(supabase, userId)
+}
+
+async function prepareItem(formData: FormData): Promise<PreparedItem> {
+  const session = await requireAuth()
+  if (!session) {
     return {
       ok: false,
       state: { errors: { root: { type: 'server', message: 'ログインが必要です' } } },
     }
   }
 
-  const raw = {
+  const rawType = itemTypeSchema.safeParse(formData.get('type'))
+  const raw: ItemValues = {
     title: String(formData.get('title') ?? ''),
-    type: String(formData.get('type') ?? ''),
+    // 想定外の値は検証で落とす。画面へ返す値は link に戻す（select に無い値は表示できない）
+    type: rawType.success ? rawType.data : 'link',
     url: String(formData.get('url') ?? ''),
     description: String(formData.get('description') ?? ''),
     visible: formData.get('visible') === 'on',
   }
 
-  const parsed = itemSchema.safeParse(raw)
+  const parsed = itemSchema.safeParse({ ...raw, type: formData.get('type') })
   if (!parsed.success) {
     const errors: Record<string, { type: string; message: string }> = {}
     for (const issue of parsed.error.issues) {
@@ -62,7 +83,15 @@ async function prepareItem(formData: FormData): Promise<PreparedItem> {
     return { ok: false, state: { errors, values: raw } }
   }
 
-  return { ok: true, supabase, userId: auth.claims.sub, data: parsed.data }
+  return {
+    ok: true,
+    ...session,
+    data: {
+      ...parsed.data,
+      url: parsed.data.url || null,
+      description: parsed.data.description || null,
+    },
+  }
 }
 
 export async function createItem(prevState: ItemState, formData: FormData): Promise<ItemState> {
@@ -86,8 +115,6 @@ export async function createItem(prevState: ItemState, formData: FormData): Prom
 
   const { error } = await supabase.from('items').insert({
     ...parsedData,
-    url: parsedData.url || null,
-    description: parsedData.description || null,
     user_id: userId,
     sort_order: (last?.sort_order ?? 0) + 1,
   })
@@ -96,8 +123,7 @@ export async function createItem(prevState: ItemState, formData: FormData): Prom
     console.error('insert failed:', error.message)
     return { errors: { root: { type: 'server', message: '保存に失敗しました' } } }
   }
-  revalidatePath('/dashboard')
-  await revalidatePublicPage(supabase, userId)
+  await revalidateAfterWrite(supabase, userId)
   // 🚨 ここを書き忘れていた（Issue #27）。updateItem は redirect しているのに
   //    createItem だけしておらず、保存に成功しても追加画面に留まっていた。
   //    React 19 が送信後にフォームをリセットするので、画面は「入力が消えただけ」に見え、
@@ -118,11 +144,7 @@ export async function updateItem(
 
   const { data, error } = await supabase
     .from('items')
-    .update({
-      ...parsedData,
-      url: parsedData.url || null,
-      description: parsedData.description || null,
-    })
+    .update(parsedData)
     .eq('id', id)
     .select('id')
     .maybeSingle()
@@ -135,15 +157,14 @@ export async function updateItem(
   if (!data) {
     return { errors: { root: { type: 'server', message: 'データが見つかりません' } } }
   }
-  revalidatePath('/dashboard')
-  await revalidatePublicPage(supabase, userId)
+  await revalidateAfterWrite(supabase, userId)
   redirect('/dashboard')
 }
 
 export async function toggleVisible(id: string, visible: boolean) {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) return
+  const session = await requireAuth()
+  if (!session) return
+  const { supabase, userId } = session
 
   const { data, error } = await supabase
     .from('items')
@@ -160,14 +181,13 @@ export async function toggleVisible(id: string, visible: boolean) {
     console.error('toggle: no row matched')
     return
   }
-  revalidatePath('/dashboard')
-  await revalidatePublicPage(supabase, auth.claims.sub)
+  await revalidateAfterWrite(supabase, userId)
 }
 
 export async function moveItem(id: string, direction: 'up' | 'down') {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) return
+  const session = await requireAuth()
+  if (!session) return
+  const { supabase, userId } = session
 
   const { data: items, error } = await supabase
     .from('items')
@@ -214,14 +234,13 @@ export async function moveItem(id: string, direction: 'up' | 'down') {
     return
   }
 
-  revalidatePath('/dashboard')
-  await revalidatePublicPage(supabase, auth.claims.sub)
+  await revalidateAfterWrite(supabase, userId)
 }
 
 export async function deleteItem(id: string) {
-  const supabase = await createClient()
-  const { data: auth } = await supabase.auth.getClaims()
-  if (!auth) return
+  const session = await requireAuth()
+  if (!session) return
+  const { supabase, userId } = session
 
   const { data, error } = await supabase
     .from('items')
@@ -238,6 +257,5 @@ export async function deleteItem(id: string) {
     console.error('delete: no row matched')
     return
   }
-  revalidatePath('/dashboard')
-  await revalidatePublicPage(supabase, auth.claims.sub)
+  await revalidateAfterWrite(supabase, userId)
 }

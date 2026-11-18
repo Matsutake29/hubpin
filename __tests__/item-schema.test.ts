@@ -42,14 +42,15 @@ describe('itemSchema', () => {
     expect(result.success).toBe(true)
   })
 
-  // 🚨 これは意図した仕様ではない。feed は RSS / API を叩くので url は必須のはず
-  //    （要件定義 L125-130・seed.sql の feed 3行はすべて url を持つ）。
-  //    v0.5 では feed は器だけなので、url の必須化は工程12（feed 実装）で行う。
-  //    ⭐ このテストは「今こうなっている」の記録であって、「こうあるべき」ではない。
-  test('【現状】feed は url が無くても通る（工程12で url を必須にする）', () => {
+  // 工程12 で feed を実装したあと、#53-3 で url を必須にした。
+  //    公開ページは url のある feed カードだけを feed として描くので、URL 無しで保存できると記事一覧が消える
+  test('feed は url が無いと通らない', () => {
     const result = itemSchema.safeParse({ title: 'A', type: 'feed', visible: true })
 
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].path).toEqual(['url'])
+    }
   })
 
   test('title が空だと通らない', () => {
@@ -65,6 +66,7 @@ describe('itemSchema', () => {
     const result = itemSchema.safeParse({
       title: 'a'.repeat(60),
       type: 'feed',
+      url: 'https://example.com/',
       visible: true,
     })
 
@@ -88,6 +90,7 @@ describe('itemSchema', () => {
     const result = itemSchema.safeParse({
       title: 'A',
       type: 'feed',
+      url: 'https://example.com/',
       description: 'a'.repeat(500),
       visible: true,
     })

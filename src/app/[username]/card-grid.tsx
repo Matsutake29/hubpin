@@ -22,7 +22,8 @@ export function CardGrid({ items }: { items: Item[] }) {
   const [openId, setOpenId] = useState<string | null>(null)
 
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    // 見出しが表示名の h1 だけなので、一覧に名前を付けてランドマーク代わりにする（#51-8）
+    <ul aria-label="カード一覧" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => {
         const isOpen = openId === item.id
         const entries = [...(item.feed_sources?.feed_entries ?? [])].sort((a, b) =>
@@ -41,6 +42,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                   <span aria-hidden="true" className="ml-1.5 text-xs font-normal text-muted">
                     ↗
                   </span>
+                  <span className="sr-only">（新しいタブで開く）</span>
                 </a>
                 {entries.length > 0 && (
                   <ul className="mt-1 flex flex-col gap-1.5">
@@ -78,6 +80,7 @@ export function CardGrid({ items }: { items: Item[] }) {
                   <span aria-hidden="true" className="ml-1.5 text-xs font-normal text-muted">
                     ↗
                   </span>
+                  <span className="sr-only">（新しいタブで開く）</span>
                 </span>
                 {/* 🚨 ここだけ2行で打ち切る。link のカードは一覧の1枚で、
                     高さが揃わないとグリッドが崩れる。note / feed の展開部（下）は

@@ -25,7 +25,7 @@ describe('ItemList', () => {
   test('先頭の「上へ移動」だけが無効になる', () => {
     render(<ItemList items={items} />)
 
-    const ups = screen.getAllByRole('button', { name: '上へ移動' })
+    const ups = screen.getAllByRole('button', { name: /上へ移動$/ })
 
     expect(ups[0].getAttribute('aria-disabled')).toBe('true')
     expect(ups[1].getAttribute('aria-disabled')).toBe('false')
@@ -35,7 +35,7 @@ describe('ItemList', () => {
   test('末尾の「下へ移動」だけが無効になる', () => {
     render(<ItemList items={items} />)
 
-    const downs = screen.getAllByRole('button', { name: '下へ移動' })
+    const downs = screen.getAllByRole('button', { name: /下へ移動$/ })
 
     expect(downs[0].getAttribute('aria-disabled')).toBe('false')
     expect(downs[1].getAttribute('aria-disabled')).toBe('false')
@@ -45,10 +45,10 @@ describe('ItemList', () => {
   test('カードが1枚のときは上も下も無効になる', () => {
     render(<ItemList items={[items[0]]} />)
 
-    expect(screen.getByRole('button', { name: '上へ移動' }).getAttribute('aria-disabled')).toBe(
+    expect(screen.getByRole('button', { name: /上へ移動$/ }).getAttribute('aria-disabled')).toBe(
       'true',
     )
-    expect(screen.getByRole('button', { name: '下へ移動' }).getAttribute('aria-disabled')).toBe(
+    expect(screen.getByRole('button', { name: /下へ移動$/ }).getAttribute('aria-disabled')).toBe(
       'true',
     )
   })
@@ -61,8 +61,8 @@ describe('ItemList', () => {
   test('無効なボタンでも disabled 属性は付けない（フォーカスを保持するため）', () => {
     render(<ItemList items={[items[0]]} />)
 
-    const up = screen.getByRole('button', { name: '上へ移動' })
-    const down = screen.getByRole('button', { name: '下へ移動' })
+    const up = screen.getByRole('button', { name: /上へ移動$/ })
+    const down = screen.getByRole('button', { name: /下へ移動$/ })
 
     expect(up.getAttribute('aria-disabled')).toBe('true')
     expect(up.hasAttribute('disabled')).toBe(false)
@@ -73,7 +73,7 @@ describe('ItemList', () => {
     render(<ItemList items={[]} />)
 
     expect(screen.getByText('まだカードがありません')).toBeDefined()
-    expect(screen.queryByRole('button', { name: '上へ移動' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /上へ移動$/ })).toBeNull()
   })
 
   // 🚨 vi.mock はパスがずれても黙って何もしない。しかも actions.ts を本物のまま
@@ -90,15 +90,19 @@ describe('ItemList', () => {
   test('公開ボタンの名前が今の状態から始まる', () => {
     render(<ItemList items={items} />)
 
-    expect(screen.getAllByRole('button', { name: /^公開（押すと非公開にする）$/ })).toHaveLength(2)
-    expect(screen.getAllByRole('button', { name: /^非公開（押すと公開にする）$/ })).toHaveLength(1)
+    expect(
+      screen.getAllByRole('button', { name: /^公開：「.+」（押すと非公開にする）$/ }),
+    ).toHaveLength(2)
+    expect(
+      screen.getAllByRole('button', { name: /^非公開：「.+」（押すと公開にする）$/ }),
+    ).toHaveLength(1)
   })
 
   // 🚨 死守ライン2。aria-disabled だけ固定しても、動く向きを取り違えたら意味が無い（#49）。
   test('「上へ移動」は moveItem(id, up) を呼ぶ', () => {
     render(<ItemList items={items} />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: '上へ移動' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: /上へ移動$/ })[1])
 
     expect(moveItem).toHaveBeenCalledTimes(1)
     expect(moveItem).toHaveBeenCalledWith('2', 'up', expect.anything())
@@ -107,9 +111,18 @@ describe('ItemList', () => {
   test('「下へ移動」は moveItem(id, down) を呼ぶ', () => {
     render(<ItemList items={items} />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: '下へ移動' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: /下へ移動$/ })[1])
 
     expect(moveItem).toHaveBeenCalledTimes(1)
     expect(moveItem).toHaveBeenCalledWith('2', 'down', expect.anything())
+  })
+
+  // #51-6 全行が同じ名前にならない
+  test('操作ボタンの名前にカードのタイトルが入る', () => {
+    render(<ItemList items={items} />)
+
+    expect(screen.getByRole('button', { name: '「い」を上へ移動' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '「い」を編集' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '「い」を削除' })).toBeTruthy()
   })
 })

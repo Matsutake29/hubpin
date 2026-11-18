@@ -234,7 +234,8 @@ body {
 
   /* 送信中。disabled:opacity だけだと押せないことしか伝わらないので、
      カーソルでも示す */
-  .btn-primary:disabled {
+  .btn-primary:disabled,
+  .btn-primary[aria-disabled='true'] {
     cursor: not-allowed;
     opacity: 0.5;
   }

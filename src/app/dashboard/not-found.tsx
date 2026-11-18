@@ -4,8 +4,9 @@ import Link from 'next/link'
 //    app/not-found.tsx に置くとサイト全体の404になり、公開ページの見え方まで変わる
 export default function DashboardNotFound() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-24 text-center">
-      <p className="text-2xl font-bold tracking-tight">カードが見つかりません</p>
+    // 他の画面と同じく <main> と <h1> を持たせる。見出しやランドマークで移動する人の行き先が無くなる（#51-7）
+    <main className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-24 text-center">
+      <h1 className="text-2xl font-bold tracking-tight">カードが見つかりません</h1>
 
       {/* 🚨 「権限がありません」とは書かない。RLS は他人の行を0行で返すだけなので、
           アプリからは「存在しない」と「他人のもの」を区別できない。
@@ -21,6 +22,6 @@ export default function DashboardNotFound() {
       <Link href="/dashboard" className="mt-2 text-sm text-main underline underline-offset-4">
         カード一覧に戻る
       </Link>
-    </div>
+    </main>
   )
 }

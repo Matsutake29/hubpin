@@ -67,6 +67,7 @@ export default function Home() {
                       <span aria-hidden="true" className="ml-1.5 text-xs font-normal text-muted">
                         ↗
                       </span>
+                      <span className="sr-only">（新しいタブで開く）</span>
                     </span>
                     <span className="text-sm leading-6 text-muted">{link.description}</span>
                   </a>
